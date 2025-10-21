@@ -1,0 +1,24 @@
+# 1. Зависимости Node.js (ОБЯЗАТЕЛЬНО)
+# Игнорируем все папки с установленными пакетами
+/node_modules
+
+# 2. Файлы среды (Секреты)
+# Здесь могут храниться ключи API, пароли к БД и т.д.
+.env
+.env.local
+
+# 3. Логи и временные файлы
+npm-debug.log
+yarn-error.log
+package-lock.json
+# Если вы используете npm версии 7+ и не хотите хранить lock-файл:
+# npm-shrinkwrap.json
+
+# 4. Файлы IDE и OS (VS Code, Mac, Windows)
+.vscode/
+.DS_Store
+Thumbs.db
+
+# 5. Игнорирование Frontend-сборки (Позже, для ЛР №3)
+# Когда вы соберете (build) React-приложение, результат не должен попадать в Git
+/client/dist

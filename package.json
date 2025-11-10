@@ -1,21 +1,17 @@
 {
-<<<<<<< HEAD
   "name": "full-stack-book-exchange",
   "version": "1.0.0",
   "description": "Full-stack project MVP for book exchange service.",
   "main": "server.js",
-=======
-  "name": "fukk-tack",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
->>>>>>> ed24b05a7383a58311dd1b132d725f1d2ae3c686
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js"
   },
-<<<<<<< HEAD
-  "keywords": ["express", "node.js", "full-stack"],
+  "keywords": [
+    "express",
+    "node.js",
+    "full-stack"
+  ],
   "author": "",
   "license": "ISC",
   "devDependencies": {
@@ -23,13 +19,3 @@
     "nodemon": "^3.1.4"
   }
 }
-=======
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "express": "^5.1.0",
-    "nodemon": "^3.1.10"
-  }
-}
->>>>>>> ed24b05a7383a58311dd1b132d725f1d2ae3c686

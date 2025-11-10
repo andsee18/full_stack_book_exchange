@@ -2,11 +2,11 @@ const express = require('express');
 const app = express();
 const PORT = 3000;
 
-//  1. Middleware 
+// --- 1. Middleware ---
 // Middleware для обработки JSON-запросов 
 app.use(express.json());
 
-// 2. Заглушка для данных (имитация базы данных)
+// --- 2. Заглушка для данных (имитация базы данных) ---
 let books = [
     { id: 1, title: 'The Lord of the Rings', author: 'J.R.R. Tolkien', genre: 'Fantasy', ownerId: 1 },
     { id: 2, title: '1984', author: 'George Orwell', genre: 'Dystopia', ownerId: 2 }
@@ -16,8 +16,7 @@ let users = [
     { id: 2, email: 'user2@example.com', name: 'Bob' }
 ];
 
-// 3. Базовая маршрутизация и Health-check
-
+// --- 3. Базовая маршрутизация и Health-check ---
 // Health-check (ЛР №2)
 app.get('/health', (req, res) => {
     res.status(200).json({ 
@@ -27,7 +26,7 @@ app.get('/health', (req, res) => {
     });
 });
 
-//4. Маршруты Авторизации (Заглушки)
+// --- 4. Маршруты Авторизации (Заглушки) ---
 app.post('/api/auth/register', (req, res) => {
     const { email } = req.body;
     res.status(201).json({ 
@@ -44,7 +43,7 @@ app.post('/api/auth/login', (req, res) => {
     });
 });
 
-//  5. Маршруты Книг 
+// --- 5. Маршруты Книг (Каталог и CRUD) ---
 // Просмотр каталога, сортировка, фильтрация (ЛР №4)
 app.get('/api/books', (req, res) => {
     const { sort, genre, search } = req.query;
@@ -79,7 +78,7 @@ app.post('/api/books', (req, res) => {
     res.status(201).json({ message: 'Книга успешно добавлена (Placeholder)', book: newBook });
 });
 
-// 6. Маршруты Пользователей (Профиль)
+// --- 6. Маршруты Пользователей (Профиль) ---
 // Мой профиль (в будущем потребуется JWT/middleware)
 app.get('/api/users/me', (req, res) => {
     res.status(200).json({ 
@@ -101,7 +100,7 @@ app.get('/api/users/:userId', (req, res) => {
     }
 });
 
-// 7. Маршруты Бронирований и Обменов ---
+// --- 7. Маршруты Бронирований и Обменов ---
 // Создание бронирования
 app.post('/api/bookings', (req, res) => {
     res.status(201).json({ 
@@ -119,7 +118,7 @@ app.get('/api/bookings/my', (req, res) => {
     });
 });
 
-// 8. Маршруты Избранного 
+// --- 8. Маршруты Избранного ---
 app.get('/api/users/me/favorites', (req, res) => {
     res.status(200).json({ 
         message: 'List of favorite books (Placeholder)',
@@ -127,7 +126,7 @@ app.get('/api/users/me/favorites', (req, res) => {
     });
 });
 
-// 9. Обработка ошибок
+// --- 9. Обработка ошибок ---
 // Обработчик 404 для несуществующих маршрутов
 app.use((req, res, next) => {
     res.status(404).json({ 
@@ -136,7 +135,7 @@ app.use((req, res, next) => {
     });
 });
 
-//10 Запуск сервера
+// --- 10. Запуск сервера ---
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });

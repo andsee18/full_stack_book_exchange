@@ -18,13 +18,15 @@ public class BookRepository {
 
     private final JdbcTemplate jdbcTemplate;
 
-    // RowMapper  преобразование строки бд в объект book
+    // маппер для преобразования строки БД в объект Book
     private final RowMapper<Book> bookRowMapper = (rs, rowNum) -> {
         Book book = new Book();
         book.setId(rs.getLong("id"));
         book.setTitle(rs.getString("title"));
         book.setAuthor(rs.getString("author"));
-        book.setUserId(rs.getLong("user_id"));
+        book.setDescription(rs.getString("description"));
+        book.setOwnerId(rs.getLong("owner_id"));
+        book.setStatus(rs.getString("status"));
         return book;
     };
 
@@ -32,16 +34,18 @@ public class BookRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    //  CREATE (POST)
+    // создать книгу
     public Book save(Book book) {
-        final String sql = "INSERT INTO books (title, author, user_id) VALUES (?, ?, ?)";
+        final String sql = "INSERT INTO books (title, author, description, owner_id, status) VALUES (?, ?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             ps.setString(1, book.getTitle());
             ps.setString(2, book.getAuthor());
-            ps.setLong(3, book.getUserId());
+            ps.setString(3, book.getDescription());
+            ps.setLong(4, book.getOwnerId());
+            ps.setString(5, book.getStatus());
             return ps;
         }, keyHolder);
 
@@ -52,9 +56,15 @@ public class BookRepository {
         return book;
     }
 
-    // READ (GET ONE)
+    // найти все книги
+    public List<Book> findAll() {
+        final String sql = "SELECT id, title, author, description, owner_id, status FROM books";
+        return jdbcTemplate.query(sql, bookRowMapper);
+    }
+
+    // найти книгу по id
     public Optional<Book> findById(Long id) {
-        final String sql = "SELECT id, title, author, user_id FROM books WHERE id = ?";
+        final String sql = "SELECT id, title, author, description, owner_id, status FROM books WHERE id = ?";
         try {
             Book book = jdbcTemplate.queryForObject(sql, bookRowMapper, id);
             return Optional.ofNullable(book);
@@ -62,24 +72,20 @@ public class BookRepository {
             return Optional.empty();
         }
     }
-    
-    // метод для получения всех книг
-    public List<Book> findAll() {
-        final String sql = "SELECT id, title, author, user_id FROM books";
-        return jdbcTemplate.query(sql, bookRowMapper);
-    }
 
-    // UPDATE (PUT)
+    // обновить книгу
     public int update(Book book) {
-        final String sql = "UPDATE books SET title = ?, author = ?, user_id = ? WHERE id = ?";
+        final String sql = "UPDATE books SET title = ?, author = ?, description = ?, owner_id = ?, status = ? WHERE id = ?";
         return jdbcTemplate.update(sql,
             book.getTitle(),
             book.getAuthor(),
-            book.getUserId(),
+            book.getDescription(),
+            book.getOwnerId(),
+            book.getStatus(),
             book.getId());
     }
 
-    // DELETE (DELETE)
+    // удалить книгу
     public int delete(Long id) {
         final String sql = "DELETE FROM books WHERE id = ?";
         return jdbcTemplate.update(sql, id);

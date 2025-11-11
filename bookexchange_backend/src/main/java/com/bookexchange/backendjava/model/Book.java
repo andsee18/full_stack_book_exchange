@@ -4,15 +4,19 @@ public class Book {
     private Long id;
     private String title;
     private String author;
-    // id владельца книги связь
-    private Long userId; 
+    private String description; // описание книги
+    private Long ownerId;     //  ownerId
+    private String status;    //  статус (доступна, в обмене и т.д.)
 
     public Book() {}
 
-    public Book(String title, String author, Long userId) {
+    public Book(Long id, String title, String author, String description, Long ownerId, String status) {
+        this.id = id;
         this.title = title;
         this.author = author;
-        this.userId = userId;
+        this.description = description;
+        this.ownerId = ownerId;
+        this.status = status;
     }
 
     // геттеры и сеттеры
@@ -22,6 +26,14 @@ public class Book {
     public void setTitle(String title) { this.title = title; }
     public String getAuthor() { return author; }
     public void setAuthor(String author) { this.author = author; }
-    public Long getUserId() { return userId; }
-    public void setUserId(Long userId) { this.userId = userId; }
+    
+    // геттеры и сеттеры для новых полей
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+    
+    // геттер и сеттер для ownerId
+    public Long getOwnerId() { return ownerId; }
+    public void setOwnerId(Long ownerId) { this.ownerId = ownerId; }
 }

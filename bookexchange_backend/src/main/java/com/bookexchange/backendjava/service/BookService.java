@@ -11,46 +11,48 @@ import java.util.Optional;
 public class BookService {
 
     private final BookRepository bookRepository;
-    private final UserService userService; // инъекция userservice для проверки
+    private final UserService userService; //userservice для проверки владельца
 
     public BookService(BookRepository bookRepository, UserService userService) {
         this.bookRepository = bookRepository;
         this.userService = userService;
     }
 
-    //  create post с проверкой существования userid
     public Optional<Book> save(Book book) {
-        Long userId = book.getUserId();
+        Long ownerId = book.getOwnerId(); 
         
-        // проверяем существует ли пользователь владелец книги
-        if (userService.findById(userId).isEmpty()) {
-            return Optional.empty(); // 404 not found если user не существует
+        // проверяем, существует ли пользователь владелец книги
+        if (userService.findById(ownerId).isEmpty()) {
+            return Optional.empty(); // 404 not found
         }
         
-        // если пользователь существует сохраняем книгу
+        if (book.getStatus() == null || book.getStatus().isEmpty()) {
+            book.setStatus("available");
+        }
+        
         return Optional.of(bookRepository.save(book));
     }
 
-    //  read one
+    // получить одну книгу по id
     public Optional<Book> findById(Long id) {
         return bookRepository.findById(id);
     }
     
-    //  read all
+    // получить все книги
     public List<Book> findAll() {
         return bookRepository.findAll();
     }
 
-    //  update put с двойной проверкой существования книги и нового userid
+    // обновить книгу с проверкой существования книги и владельца
     public Optional<Book> update(Long id, Book updatedBook) {
-        // проверка 1 существует ли книга которую мы пытаемся обновить
+        // проверка 1: существует ли книга которую мы пытаемся обновить
         if (bookRepository.findById(id).isEmpty()) {
             return Optional.empty(); // книга не найдена
         }
 
-        // проверка 2 если указан новый userid убедимся что он существует
-        if (userService.findById(updatedBook.getUserId()).isEmpty()) {
-             return Optional.empty(); // новый user не найден
+        // проверка 2: убедимся что новый владелец  существует
+        if (userService.findById(updatedBook.getOwnerId()).isEmpty()) {
+             return Optional.empty(); // новый владелец не найден
         }
         
         updatedBook.setId(id);
@@ -58,7 +60,7 @@ public class BookService {
         return Optional.of(updatedBook);
     }
 
-    //  delete
+    // удалить книгу
     public boolean delete(Long id) {
         int deletedRows = bookRepository.delete(id);
         return deletedRows > 0;

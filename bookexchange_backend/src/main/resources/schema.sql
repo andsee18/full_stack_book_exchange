@@ -1,0 +1,15 @@
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    location VARCHAR(255),
+    rating REAL
+);
+
+CREATE TABLE IF NOT EXISTS books (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title VARCHAR(255) NOT NULL,
+    author VARCHAR(255) NOT NULL,
+    user_id INTEGER,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);

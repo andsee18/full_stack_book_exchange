@@ -9,7 +9,8 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import NotFound from './pages/NotFound';
 import Profile from './pages/Profile'; 
-import Exchanges from './pages/Exchanges'; // <-- Добавлен импорт новой страницы
+import Exchanges from './pages/Exchanges';
+import AddBook from './pages/AddBook'; // <--- ДОБАВЛЕН ИМПОРТ
 
 function App() {
   return (
@@ -21,7 +22,8 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/profile" element={<Profile />} /> 
         <Route path="/favorites" element={<Catalog isFavorites={true} />} /> 
-        <Route path="/exchanges" element={<Exchanges />} /> {/* <-- Обновлен маршрут */}
+        <Route path="/exchanges" element={<Exchanges />} /> 
+        <Route path="/add-book" element={<AddBook />} /> {/* <--- ДОБАВЛЕН МАРШРУТ */}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Layout>

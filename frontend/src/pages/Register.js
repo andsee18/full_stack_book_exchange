@@ -1,23 +1,62 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { registerUser } from '../api/authApi'; // <-- Убедитесь, что этот путь правильный
 
 // --- Бежевая палитра для единообразия ---
-const primaryColor = '#a89d70';   
+const primaryColor = '#a89d70';   
 const darkBeigeColor = '#eae7dd'; 
 
 export default function Register() {
-    const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
+    // Изменяем state, чтобы соответствовать модели User на бэкенде
+    const [username, setUsername] = useState(''); 
+    const [location, setLocation] = useState(''); // Добавлено поле location
     const [password, setPassword] = useState('');
     const [passwordConfirm, setPasswordConfirm] = useState('');
+    const [message, setMessage] = useState(''); 
+    
+    // Внимание: поле rating мы устанавливаем при отправке по умолчанию (5.0) для простоты
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => { // <-- Обязательно 'async'
         e.preventDefault();
+        
+        // !!! ЛОГИРОВАНИЕ ДЛЯ ДИАГНОСТИКИ !!!
+        console.log('--- STARTING SUBMIT ---'); 
+        
+        setMessage('');
+
         if (password !== passwordConfirm) {
-            alert('Пароли не совпадают!');
+            setMessage('Ошибка: Пароли не совпадают!');
+            console.error('Password mismatch');
             return;
         }
-        console.log('Register attempt:', { name, email, password });
+
+        try {
+            // Данные для отправки на бэкенд, соответствующие модели User
+            const userData = {
+                username: username,
+                password: password,
+                location: location,
+                rating: 5.0 // Устанавливаем базовый рейтинг
+            };
+            
+            console.log('Data sent to API:', userData); // Логируем отправляемые данные
+
+            const newUser = await registerUser(userData); // <-- Вызов API
+
+            // Если запрос успешен (статус 201 Created)
+            setMessage(`Успешная регистрация! ID: ${newUser.id}`);
+            
+            // Очистка формы
+            setUsername('');
+            setLocation('');
+            setPassword('');
+            setPasswordConfirm('');
+
+        } catch (error) {
+            // Обработка ошибок
+            setMessage('Ошибка регистрации. Проверьте консоль браузера и терминал бэкенда.');
+            console.error('Registration error details:', error);
+        }
     };
 
     return (
@@ -26,24 +65,27 @@ export default function Register() {
                 <h1 style={headerStyle}>Регистрация</h1>
                 <form onSubmit={handleSubmit} style={formStyle}>
                     
+                    {/* Поле Имя пользователя (username) */}
                     <input
                         type="text"
                         placeholder="Имя пользователя"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
                         required
                         style={inputStyle}
                     />
                     
+                    {/* Поле Местоположение (location) */}
                     <input
-                        type="email"
-                        placeholder="Email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        type="text"
+                        placeholder="Местоположение (город)"
+                        value={location}
+                        onChange={(e) => setLocation(e.target.value)}
                         required
                         style={inputStyle}
                     />
-                    
+
+                    {/* Поле Пароль */}
                     <input
                         type="password"
                         placeholder="Пароль"
@@ -53,6 +95,7 @@ export default function Register() {
                         style={inputStyle}
                     />
                     
+                    {/* Поле Подтверждение пароля */}
                     <input
                         type="password"
                         placeholder="Подтвердите пароль"
@@ -66,6 +109,13 @@ export default function Register() {
                         Зарегистрироваться
                     </button>
                 </form>
+                
+                {/* Сообщение об успехе или ошибке */}
+                {message && (
+                    <p style={{ marginTop: '15px', color: message.startsWith('Успешная') ? primaryColor : 'red' }}>
+                        {message}
+                    </p>
+                )}
 
                 <p style={footerTextStyle}>
                     Уже есть аккаунт? <Link to="/login" style={linkStyle}>Войти</Link>

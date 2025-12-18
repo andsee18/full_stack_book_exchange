@@ -7,9 +7,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/books")
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001", "http://localhost:5173", "http://localhost:5000"})
 public class BookController {
 
     private final BookService bookService;
@@ -18,47 +20,55 @@ public class BookController {
         this.bookService = bookService;
     }
 
-    // получить все книги
-    @GetMapping
-    public List<Book> findAll() {
-        return bookService.findAll();
-    }
-
-    // получить книгу по id
-    @GetMapping("/{id}")
-    public ResponseEntity<Book> findById(@PathVariable Long id) {
-        return bookService.findById(id)
-            .map(ResponseEntity::ok)
-            .orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    // создать новую книгу
+    // создание книги важный
     @PostMapping
-    // используем created для статуса 201
-    public ResponseEntity<Book> create(@RequestBody Book book) {
-        // сервис проверяет ownerid
-        return bookService.save(book)
-            .map(b -> ResponseEntity.status(HttpStatus.CREATED).body(b)) // 201 created
-            .orElseGet(() -> ResponseEntity.status(HttpStatus.BAD_REQUEST).build()); // 400 bad request
-    }
-
-    // обновить книгу по id
-    @PutMapping("/{id}")
-    public ResponseEntity<Book> update(@PathVariable Long id, @RequestBody Book book) {
-        // сервис проверяет book id и owner id
-        return bookService.update(id, book)
-            .map(ResponseEntity::ok) // 200 ok
-            .orElseGet(() -> ResponseEntity.notFound().build()); // 404 not found 
-    }
-
-    // удалить книгу по id
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        boolean deleted = bookService.delete(id);
-        if (deleted) {
-            return ResponseEntity.noContent().build(); // 204 no content
+    public ResponseEntity<?> createBook(@RequestBody Book book) {
+        Optional<Book> savedBook = bookService.save(book);
+        
+        if (savedBook.isPresent()) {
+            return new ResponseEntity<>(savedBook.get(), HttpStatus.CREATED); 
         } else {
-            return ResponseEntity.notFound().build(); // 404 not found
+            return new ResponseEntity<>("Failed to create book. Check user authentication.", HttpStatus.BAD_REQUEST); 
         }
+    }
+
+    // получение всех книг
+    @GetMapping
+    public ResponseEntity<List<Book>> getAllBooks() {
+        List<Book> books = bookService.findAll();
+        return ResponseEntity.ok(books);
+    }
+
+    // получение книги важный
+    @GetMapping("/{id}")
+    public ResponseEntity<Book> getBookById(@PathVariable Long id) {
+        Optional<Book> book = bookService.findById(id);
+        return book.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    // обновление книги важный
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateBook(@PathVariable Long id, @RequestBody Book updatedBook) {
+        // нет прав если
+        Optional<Book> result = bookService.update(id, updatedBook);
+
+        if (result.isPresent()) {
+            return new ResponseEntity<>(result.get(), HttpStatus.OK); 
+        }
+        
+        // книга найдена важный
+        return ResponseEntity.notFound().build(); // 404 Not Found
+    }
+
+    // удаление книги важный
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteBook(@PathVariable Long id) {
+        // нет прав если
+        if (bookService.delete(id)) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT); // 204 No Content
+        }
+        
+        // книга найдена важный
+        return ResponseEntity.notFound().build(); // 404 Not Found
     }
 }

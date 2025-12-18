@@ -23,8 +23,15 @@ public class UserRepository {
         user.setId(rs.getLong("id"));
         user.setUsername(rs.getString("username"));
         user.setPassword(rs.getString("password")); // ВНИМАНИЕ: Пароль возвращается для проверки
+        user.setEmail(rs.getString("email"));
+        user.setProfileImage(rs.getString("profile_image"));
         user.setLocation(rs.getString("location"));
         user.setRating(rs.getDouble("rating"));
+        try {
+            user.setRatingCount(rs.getInt("rating_count"));
+        } catch (Exception ignored) {
+            user.setRatingCount(0);
+        }
         return user;
     };
 
@@ -32,17 +39,23 @@ public class UserRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    // CREATE (POST)
+    // комментарий важный ключевой
     public User save(User user) {
-        final String sql = "INSERT INTO users (username, password, location, rating) VALUES (?, ?, ?, ?)";
+        final String sql = "INSERT INTO users (username, password, email, profile_image, location, rating, rating_count) VALUES (?, ?, ?, ?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
+
+        double rating = user.getRating() != null ? user.getRating() : 0.0;
+        int ratingCount = user.getRatingCount() != null ? user.getRatingCount() : 0;
 
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             ps.setString(1, user.getUsername());
             ps.setString(2, user.getPassword());
-            ps.setString(3, user.getLocation());
-            ps.setDouble(4, user.getRating());
+            ps.setString(3, user.getEmail());
+            ps.setString(4, user.getProfileImage());
+            ps.setString(5, user.getLocation());
+            ps.setDouble(6, rating);
+            ps.setInt(7, ratingCount);
             return ps;
         }, keyHolder);
 
@@ -53,9 +66,9 @@ public class UserRepository {
         return user;
     }
 
-    // READ ONE (GET)
+    // комментарий важный ключевой
     public Optional<User> findById(Long id) {
-        final String sql = "SELECT id, username, password, location, rating FROM users WHERE id = ?";
+        final String sql = "SELECT id, username, password, email, profile_image, location, rating, rating_count FROM users WHERE id = ?";
         try {
             User user = jdbcTemplate.queryForObject(sql, userRowMapper, id);
             return Optional.ofNullable(user);
@@ -64,9 +77,9 @@ public class UserRepository {
         }
     }
 
-    // НОВЫЙ МЕТОД: Поиск по имени пользователя для логина
+    //  поиск имени важный
     public Optional<User> findByUsername(String username) {
-        final String sql = "SELECT id, username, password, location, rating FROM users WHERE username = ?";
+        final String sql = "SELECT id, username, password, email, profile_image, location, rating, rating_count FROM users WHERE username = ?";
         try {
             User user = jdbcTemplate.queryForObject(sql, userRowMapper, username);
             return Optional.ofNullable(user);
@@ -75,24 +88,30 @@ public class UserRepository {
         }
     }
 
-    // READ ALL (GET)
+    // комментарий важный ключевой
     public List<User> findAll() {
-        final String sql = "SELECT id, username, password, location, rating FROM users";
+        final String sql = "SELECT id, username, password, email, profile_image, location, rating, rating_count FROM users";
         return jdbcTemplate.query(sql, userRowMapper);
     }
 
-    // UPDATE (PUT)
+    // комментарий важный ключевой
     public int update(User user) {
-        final String sql = "UPDATE users SET username = ?, password = ?, location = ?, rating = ? WHERE id = ?";
+        final String sql = "UPDATE users SET username = ?, password = ?, email = ?, profile_image = ?, location = ?, rating = ?, rating_count = ? WHERE id = ?";
+
+        double rating = user.getRating() != null ? user.getRating() : 0.0;
+        int ratingCount = user.getRatingCount() != null ? user.getRatingCount() : 0;
         return jdbcTemplate.update(sql,
             user.getUsername(),
             user.getPassword(),
+            user.getEmail(),
+            user.getProfileImage(),
             user.getLocation(),
-            user.getRating(),
+            rating,
+            ratingCount,
             user.getId());
     }
 
-    // DELETE (DELETE)
+    // комментарий важный ключевой
     public int delete(Long id) {
         final String sql = "DELETE FROM users WHERE id = ?";
         return jdbcTemplate.update(sql, id);

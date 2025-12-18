@@ -18,13 +18,16 @@ public class BookRepository {
 
     private final JdbcTemplate jdbcTemplate;
 
-    // маппер для преобразования строки БД в объект Book
+    // маппер преобразования для
     private final RowMapper<Book> bookRowMapper = (rs, rowNum) -> {
         Book book = new Book();
         book.setId(rs.getLong("id"));
         book.setTitle(rs.getString("title"));
         book.setAuthor(rs.getString("author"));
+        book.setGenre(rs.getString("genre"));
         book.setDescription(rs.getString("description"));
+        book.setCondition(rs.getString("condition"));
+        book.setCoverUrl(rs.getString("cover_url"));
         book.setOwnerId(rs.getLong("owner_id"));
         book.setStatus(rs.getString("status"));
         return book;
@@ -34,18 +37,21 @@ public class BookRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    // создать книгу
+    // создать книгу важный
     public Book save(Book book) {
-        final String sql = "INSERT INTO books (title, author, description, owner_id, status) VALUES (?, ?, ?, ?, ?)";
+        final String sql = "INSERT INTO books (title, author, genre, description, condition, cover_url, owner_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             ps.setString(1, book.getTitle());
             ps.setString(2, book.getAuthor());
-            ps.setString(3, book.getDescription());
-            ps.setLong(4, book.getOwnerId());
-            ps.setString(5, book.getStatus());
+            ps.setString(3, book.getGenre());
+            ps.setString(4, book.getDescription());
+            ps.setString(5, book.getCondition());
+            ps.setString(6, book.getCoverUrl());
+            ps.setLong(7, book.getOwnerId());
+            ps.setString(8, book.getStatus());
             return ps;
         }, keyHolder);
 
@@ -58,13 +64,13 @@ public class BookRepository {
 
     // найти все книги
     public List<Book> findAll() {
-        final String sql = "SELECT id, title, author, description, owner_id, status FROM books";
+        final String sql = "SELECT id, title, author, genre, description, condition, cover_url, owner_id, status FROM books ORDER BY id DESC";
         return jdbcTemplate.query(sql, bookRowMapper);
     }
 
-    // найти книгу по id
+    // найти книгу важный
     public Optional<Book> findById(Long id) {
-        final String sql = "SELECT id, title, author, description, owner_id, status FROM books WHERE id = ?";
+        final String sql = "SELECT id, title, author, genre, description, condition, cover_url, owner_id, status FROM books WHERE id = ?";
         try {
             Book book = jdbcTemplate.queryForObject(sql, bookRowMapper, id);
             return Optional.ofNullable(book);
@@ -73,21 +79,30 @@ public class BookRepository {
         }
     }
 
-    // обновить книгу
+    // обновить книгу важный
     public int update(Book book) {
-        final String sql = "UPDATE books SET title = ?, author = ?, description = ?, owner_id = ?, status = ? WHERE id = ?";
+        final String sql = "UPDATE books SET title = ?, author = ?, genre = ?, description = ?, condition = ?, cover_url = ?, owner_id = ?, status = ? WHERE id = ?";
         return jdbcTemplate.update(sql,
             book.getTitle(),
             book.getAuthor(),
+            book.getGenre(),
             book.getDescription(),
+            book.getCondition(),
+            book.getCoverUrl(),
             book.getOwnerId(),
             book.getStatus(),
             book.getId());
     }
 
-    // удалить книгу
+    // удалить книгу важный
     public int delete(Long id) {
         final String sql = "DELETE FROM books WHERE id = ?";
         return jdbcTemplate.update(sql, id);
+    }
+
+    // комментарий важный ключевой
+    public int updateStatusWhereLowerEquals(String fromStatus, String toStatus) {
+        final String sql = "UPDATE books SET status = ? WHERE lower(status) = lower(?)";
+        return jdbcTemplate.update(sql, toStatus, fromStatus);
     }
 }

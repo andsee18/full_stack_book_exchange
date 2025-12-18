@@ -1,16 +1,16 @@
 import React from 'react';
-// Импортируем исправленный компонент Header
-import Header from './Header'; 
+// импортируем родительской важный
+import Header from '../Header'; 
 
 
-// --- ЕДИНАЯ ПАЛИТРА ---
+// единая палитра важный
 const primaryColor = '#a89d70';     // Основной бежевый акцент
 const headerBackground = '#eae7dd'; // Фон хедера
 const textColor = '#3c3838';        // Основной текст
 const lightBackground = '#fdfcf7';  // Светлый фон приложения
 
 
-// --- СТИЛИ LAYOUT ---
+// стили важный ключевой
 
 const appStyle = {
     fontFamily: 'Arial, sans-serif',
@@ -36,8 +36,7 @@ const footerStyle = {
 };
 
 
-// --- Основной компонент Layout ---
-// children должен находиться в main
+// основной компонент важный
 export default function Layout({ children }) {
     return (
         <div style={appStyle}>

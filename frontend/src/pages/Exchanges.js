@@ -1,42 +1,41 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { getAllBooks } from '../api/BookApi';
+import { getUserById } from '../api/userApi';
+import { getMyRatedExchangeIds, rateExchange } from '../api/ratingApi';
+import {
+    acceptExchangeRequest,
+    cancelExchangeRequest,
+    getIncomingExchangeRequests,
+    getOutgoingExchangeRequests,
+    rejectExchangeRequest,
+} from '../api/exchangeApi';
 
-// --- ИМПОРТ ЗАГЛУШЕК ОБЛОЖЕК ---
-import cover1 from '../assets/master_i_margarita.jpg'; 
-
-// --- Бежевая палитра для единообразия ---
+// бежевая палитра для
 const primaryColor = '#a89d70';   
 const darkBeigeColor = '#eae7dd'; 
 const textColor = '#3c3838';      
 const lightBackground = '#fdfcf7';
 
-// Заглушечные данные для вкладки "Обмены"
-const DUMMY_EXCHANGES = [
-    {
-        id: 1,
-        status: 'Ожидание подтверждения',
-        bookOffered: { title: 'Назад к тебе', author: 'Сара Джио', coverUrl: null, id: 10 },
-        bookRequested: { title: 'Мастер и Маргарита', author: 'М. А. Булгаков', coverUrl: cover1, id: 1 },
-        isIncoming: true, // Входящее предложение, требующее действий
-    },
-    {
-        id: 2,
-        status: 'Обмен завершён',
-        bookOffered: { title: 'Назад к тебе', author: 'Сара Джио', coverUrl: null, id: 10 },
-        bookRequested: { title: 'Мастер и Маргарита', author: 'М. А. Булгаков', coverUrl: cover1, id: 1 },
-        isIncoming: false, // Исходящий обмен
-    },
-    {
-        id: 3,
-        status: 'Новое предложение',
-        bookOffered: { title: 'Назад к тебе', author: 'Сара Джио', coverUrl: null, id: 10 },
-        bookRequested: { title: 'Мастер и Маргарита', author: 'М. А. Булгаков', coverUrl: cover1, id: 1 },
-        isIncoming: true,
-    },
-];
+const formatExchangeStatusRu = (status) => {
+    const s = (status || '').toString().trim().toLowerCase();
+    switch (s) {
+        case 'pending':
+            return 'Ожидание подтверждения';
+        case 'accepted':
+            return 'Принято';
+        case 'rejected':
+            return 'Отклонено';
+        case 'cancelled':
+            return 'Отменено';
+        default:
+            return status || '—';
+    }
+};
 
-// --- Вспомогательный компонент для одной книги в паре ---
-const ExchangeBookItem = ({ book }) => (
+// вспомогательный компонент для
+const ExchangeBookItem = ({ book, userLabel, isYours }) => (
     <div style={bookItemStyle}>
         <div style={bookCoverPlaceholderStyle}>
              {/* Заглушка, если нет обложки */}
@@ -49,20 +48,65 @@ const ExchangeBookItem = ({ book }) => (
         <div style={{ flexGrow: 1 }}>
             <Link to={`/books/${book.id}`} style={bookTitleStyle}>{book.title}</Link>
             <p style={bookAuthorStyle}>{book.author}</p>
+            {userLabel ? (
+                <p style={bookOwnerStyle}>
+                    {userLabel}{isYours ? ' (ваша книга)' : ''}
+                </p>
+            ) : null}
         </div>
-        <span style={favoriteIconStyle}>❤</span>
     </div>
 );
 
-// --- Основной компонент элемента обмена ---
+// основной компонент элемента
 const ExchangeItem = ({ exchange }) => {
-    const isActionRequired = exchange.isIncoming && (exchange.status === 'Новое предложение' || exchange.status === 'Ожидание подтверждения');
+    const isPending = exchange.status === 'pending';
+    const canAccept = exchange.isIncoming && isPending;
+    const canClose = isPending;
+
+    const [isConfirmHovered, setIsConfirmHovered] = useState(false);
+    const [isCloseHovered, setIsCloseHovered] = useState(false);
+
+    const [hoverStar, setHoverStar] = useState(0);
+    const [isRating, setIsRating] = useState(false);
+    const [ratedLocal, setRatedLocal] = useState(false);
+
+    const handleClose = () => {
+        if (!canClose) return;
+        const ok = window.confirm(exchange.isIncoming ? 'Отклонить предложение обмена?' : 'Отменить запрос на обмен?');
+        if (!ok) return;
+
+        if (exchange.isIncoming) {
+            exchange.onReject?.(exchange.id);
+        } else {
+            exchange.onCancel?.(exchange.id);
+        }
+    };
+
+    const canRate = exchange.status === 'accepted' && !exchange.isRated && !ratedLocal;
+    const otherUserLabel = exchange.isIncoming ? exchange.bookOfferedUserLabel : exchange.bookRequestedUserLabel;
+
+    const handleRate = async (stars) => {
+        if (!canRate || isRating) return;
+        setIsRating(true);
+        try {
+            await exchange.onRate?.(exchange.id, stars);
+            setRatedLocal(true);
+        } catch {
+            alert('Не удалось отправить оценку.');
+        } finally {
+            setIsRating(false);
+        }
+    };
 
     return (
         <div style={itemContainerStyle}>
             
             {/* 1. Верхняя книга (Предложенная) */}
-            <ExchangeBookItem book={exchange.bookOffered} />
+            <ExchangeBookItem
+                book={exchange.bookOffered}
+                userLabel={exchange.bookOfferedUserLabel}
+                isYours={exchange.bookOfferedIsYours}
+            />
             
             {/* Разделитель с иконкой обмена */}
             <div style={separatorStyle}>
@@ -70,46 +114,299 @@ const ExchangeItem = ({ exchange }) => {
             </div>
             
             {/* 2. Нижняя книга (Запрашиваемая) */}
-            <ExchangeBookItem book={exchange.bookRequested} />
+            <ExchangeBookItem
+                book={exchange.bookRequested}
+                userLabel={exchange.bookRequestedUserLabel}
+                isYours={exchange.bookRequestedIsYours}
+            />
             
             {/* 3. Статус */}
             <div style={statusBadgeStyle(exchange.status)}>
-                {exchange.status}
+                {formatExchangeStatusRu(exchange.status)}
             </div>
 
             {/* 4. Кнопки действий (только для входящих) */}
-            {isActionRequired && (
+            {canAccept && (
                 <div style={actionButtonsContainerStyle}>
-                    <button style={confirmButtonStyle}>Подтвердить обмен</button>
-                    <button style={rejectButtonStyle}>Отказать в обмене</button>
+                    <button
+                        style={{ ...confirmButtonStyle, backgroundColor: isConfirmHovered ? '#9fd0a3' : confirmButtonStyle.backgroundColor }}
+                        onMouseEnter={() => setIsConfirmHovered(true)}
+                        onMouseLeave={() => setIsConfirmHovered(false)}
+                        onClick={() => exchange.onAccept?.(exchange.id)}
+                    >
+                        Подтвердить обмен
+                    </button>
                 </div>
             )}
             
-            {/* Кнопка закрытия (пока заглушка) */}
-            <span style={closeButtonStyle}>x</span>
+            {/* Крестик: отклонить (incoming) или отменить (outgoing) */}
+            {canClose ? (
+                <button
+                    type="button"
+                    onClick={handleClose}
+                    onMouseEnter={() => setIsCloseHovered(true)}
+                    onMouseLeave={() => setIsCloseHovered(false)}
+                    style={{
+                        ...closeButtonStyle,
+                        color: isCloseHovered ? textColor : closeButtonStyle.color,
+                        backgroundColor: isCloseHovered ? 'rgba(0,0,0,0.06)' : 'transparent',
+                    }}
+                    aria-label={exchange.isIncoming ? 'Отклонить обмен' : 'Отменить обмен'}
+                    title={exchange.isIncoming ? 'Отклонить' : 'Отменить'}
+                >
+                    ✕
+                </button>
+            ) : null}
+
+            {canRate ? (
+                <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${darkBeigeColor}` }}>
+                    <div style={{ marginBottom: 6, color: '#555', fontWeight: 'bold' }}>
+                        Оцените пользователя: {otherUserLabel || 'партнёр по обмену'}
+                    </div>
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'center', justifyContent: 'center' }}>
+                        {[1, 2, 3, 4, 5].map((n) => {
+                            const filled = (hoverStar || 0) >= n;
+                            return (
+                                <button
+                                    key={n}
+                                    type="button"
+                                    onMouseEnter={() => setHoverStar(n)}
+                                    onMouseLeave={() => setHoverStar(0)}
+                                    onClick={() => handleRate(n)}
+                                    disabled={isRating}
+                                    style={{
+                                        border: 'none',
+                                        background: 'transparent',
+                                        cursor: isRating ? 'not-allowed' : 'pointer',
+                                        fontSize: 22,
+                                        lineHeight: 1,
+                                        color: filled ? primaryColor : '#c8c0aa',
+                                        padding: '2px 3px',
+                                    }}
+                                    aria-label={`Поставить ${n} из 5`}
+                                    title={`${n} / 5`}
+                                >
+                                    {filled ? '★' : '☆'}
+                                </button>
+                            );
+                        })}
+                        {isRating ? <span style={{ color: '#666', fontSize: 13 }}>Отправка...</span> : null}
+                    </div>
+                </div>
+            ) : null}
         </div>
     );
 };
 
-// --- Главный компонент страницы обменов ---
+// главный компонент страницы
 export default function Exchanges() {
+    const { user } = useAuth();
+    const isLoggedIn = !!user;
+
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [booksCatalog, setBooksCatalog] = useState([]);
+    const [incomingRequests, setIncomingRequests] = useState([]);
+    const [outgoingRequests, setOutgoingRequests] = useState([]);
+    const [exchangeUsersById, setExchangeUsersById] = useState({});
+    const [ratedExchangeIds, setRatedExchangeIds] = useState(new Set());
+
+    const booksById = useMemo(() => {
+        const map = new Map();
+        (booksCatalog || []).forEach((b) => {
+            if (b?.id != null) map.set(Number(b.id), b);
+        });
+        return map;
+    }, [booksCatalog]);
+
+    const exchanges = useMemo(() => {
+        const toBookVm = (bookId) => {
+            const book = booksById.get(Number(bookId));
+            return {
+                id: bookId,
+                title: book?.title || `Книга удалена (#${bookId})`,
+                author: book?.author || '',
+                coverUrl: book?.coverUrl,
+            };
+        };
+
+        const normalize = (r, isIncoming) => ({
+            id: r.id,
+            status: r.status,
+            isIncoming,
+            requesterId: r.requesterId,
+            recipientId: r.recipientId,
+            bookOffered: toBookVm(r.offeredBookId),
+            bookRequested: toBookVm(r.requestedBookId),
+            bookOfferedIsYours: !isIncoming,
+            bookRequestedIsYours: isIncoming,
+            bookOfferedUserLabel: isIncoming
+                ? (exchangeUsersById?.[Number(r.requesterId)] || `Пользователь #${r.requesterId}`)
+                : 'Вы',
+            bookRequestedUserLabel: isIncoming
+                ? 'Вы'
+                : (exchangeUsersById?.[Number(r.recipientId)] || `Пользователь #${r.recipientId}`),
+            isRated: ratedExchangeIds?.has?.(Number(r.id)),
+        });
+
+        const merged = [
+            ...(Array.isArray(incomingRequests) ? incomingRequests.map((r) => normalize(r, true)) : []),
+            ...(Array.isArray(outgoingRequests) ? outgoingRequests.map((r) => normalize(r, false)) : []),
+        ];
+        merged.sort((a, b) => Number(b.id) - Number(a.id));
+        return merged;
+    }, [booksById, incomingRequests, outgoingRequests, exchangeUsersById, ratedExchangeIds]);
+
+    const handleRate = async (exchangeId, stars) => {
+        await rateExchange(Number(exchangeId), Number(stars));
+        setRatedExchangeIds((prev) => {
+            const next = new Set(prev);
+            next.add(Number(exchangeId));
+            return next;
+        });
+    };
+
+    const reload = async (options = {}) => {
+        if (!isLoggedIn) return;
+
+        const silent = !!options?.silent;
+        if (!silent) setIsLoading(true);
+        setError(null);
+        try {
+            const [incoming, outgoing, allBooks, rated] = await Promise.all([
+                getIncomingExchangeRequests(),
+                getOutgoingExchangeRequests(),
+                getAllBooks(),
+                getMyRatedExchangeIds().catch(() => []),
+            ]);
+
+            setRatedExchangeIds(
+                new Set((Array.isArray(rated) ? rated : []).map((x) => Number(x)).filter((x) => Number.isFinite(x)))
+            );
+
+            // комментарий важный ключевой
+            const involvedUserIds = new Set();
+            (Array.isArray(incoming) ? incoming : []).forEach((r) => {
+                if (r?.requesterId != null) involvedUserIds.add(Number(r.requesterId));
+                if (r?.recipientId != null) involvedUserIds.add(Number(r.recipientId));
+            });
+            (Array.isArray(outgoing) ? outgoing : []).forEach((r) => {
+                if (r?.requesterId != null) involvedUserIds.add(Number(r.requesterId));
+                if (r?.recipientId != null) involvedUserIds.add(Number(r.recipientId));
+            });
+
+            const missingUserIds = Array.from(involvedUserIds).filter((id) => !exchangeUsersById?.[id]);
+            if (missingUserIds.length) {
+                Promise.all(
+                    missingUserIds.map(async (id) => {
+                        try {
+                            const u = await getUserById(id);
+                            return [id, u?.username || `Пользователь #${id}`];
+                        } catch {
+                            return [id, `Пользователь #${id}`];
+                        }
+                    })
+                ).then((pairs) => {
+                    setExchangeUsersById((prev) => {
+                        const next = { ...prev };
+                        pairs.forEach(([id, name]) => {
+                            next[id] = name;
+                        });
+                        return next;
+                    });
+                });
+            }
+
+            setBooksCatalog(Array.isArray(allBooks) ? allBooks : []);
+            setIncomingRequests(Array.isArray(incoming) ? incoming : []);
+            setOutgoingRequests(Array.isArray(outgoing) ? outgoing : []);
+        } catch (e) {
+            setError('Не удалось загрузить обмены. Проверьте сервер.');
+            if (!silent) {
+                setIncomingRequests([]);
+                setOutgoingRequests([]);
+            }
+        } finally {
+            if (!silent) setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (!isLoggedIn) return;
+
+        reload();
+        const intervalId = setInterval(() => {
+            reload({ silent: true });
+        }, 7000);
+
+        return () => clearInterval(intervalId);
+        // комментарий важный ключевой
+    }, [isLoggedIn]);
+
+    const handleAccept = async (id) => {
+        try {
+            await acceptExchangeRequest(id);
+            await reload();
+        } catch {
+            alert('Не удалось подтвердить обмен.');
+            await reload({ silent: true });
+        }
+    };
+
+    const handleReject = async (id) => {
+        try {
+            await rejectExchangeRequest(id);
+            await reload();
+        } catch {
+            alert('Не удалось отказать в обмене.');
+            await reload({ silent: true });
+        }
+    };
+
+    const handleCancel = async (id) => {
+        try {
+            await cancelExchangeRequest(id);
+            await reload();
+        } catch {
+            alert('Не удалось отменить запрос на обмен.');
+            await reload({ silent: true });
+        }
+    };
+
     return (
         <div style={pageContainerStyle}>
             
             <Link to="/" style={backLinkStyle}>&larr; Назад</Link>
             
-            {/* <h1>🤝 Мои обмены</h1> был удален по вашему запросу */}
-            
-            <div style={listContainerStyle}>
-                {DUMMY_EXCHANGES.map(exchange => (
-                    <ExchangeItem key={exchange.id} exchange={exchange} />
-                ))}
-            </div>
+            {!isLoggedIn ? (
+                <p style={{ marginTop: '20px' }}>Войдите в аккаунт, чтобы увидеть обмены.</p>
+            ) : isLoading ? (
+                <p style={{ marginTop: '20px' }}>Загрузка...</p>
+            ) : error ? (
+                <p style={{ marginTop: '20px', color: 'red' }}>{error}</p>
+            ) : exchanges.length === 0 ? (
+                <p style={{ marginTop: '20px' }}>Пока нет активных обменов.</p>
+            ) : (
+                <div style={listContainerStyle}>
+                    {exchanges.map((exchange) => (
+                        <ExchangeItem
+                            key={exchange.id}
+                            exchange={{
+                                ...exchange,
+                                onAccept: handleAccept,
+                                onReject: handleReject,
+                                onCancel: handleCancel,
+                                onRate: handleRate,
+                            }}
+                        />
+                    ))}
+                </div>
+            )}
         </div>
     );
 }
 
-// --- Стили ---
+// стили важный ключевой
 
 const pageContainerStyle = { 
     maxWidth: '600px', 
@@ -125,7 +422,7 @@ const listContainerStyle = {
     marginTop: '30px',
 };
 
-// Стили контейнера одного обмена
+// стили контейнера одного
 const itemContainerStyle = {
     backgroundColor: darkBeigeColor, 
     borderRadius: '10px',
@@ -134,7 +431,7 @@ const itemContainerStyle = {
     position: 'relative',
 };
 
-// Стили для одной книги внутри обмена
+// стили одной для
 const bookItemStyle = {
     display: 'flex',
     alignItems: 'center',
@@ -175,13 +472,14 @@ const bookAuthorStyle = {
     margin: '0',
 };
 
-const favoriteIconStyle = {
-    fontSize: '1.5em',
-    color: 'black', // Черное сердце как в макете
-    marginLeft: '10px',
+const bookOwnerStyle = {
+    margin: '4px 0 0 0',
+    fontSize: '0.8em',
+    color: textColor,
+    opacity: 0.72,
 };
 
-// Стили разделителя
+// стили разделителя важный
 const separatorStyle = {
     display: 'flex',
     justifyContent: 'center',
@@ -195,15 +493,19 @@ const exchangeIconStyle = {
     filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.2))',
 };
 
-// Стили бейджа статуса
+// стили бейджа статуса
 const statusBadgeStyle = (status) => {
+    const s = (status || '').toString().trim().toLowerCase();
+
     let backgroundColor = '#ccc';
     let color = textColor;
 
-    if (status === 'Ожидание подтверждения' || status === 'Новое предложение') {
-        backgroundColor = '#fce4a6'; // Желтоватый/бежевый акцент
-    } else if (status === 'Обмен завершён') {
-        backgroundColor = '#c8d3b0'; // Светло-зеленый
+    if (s === 'pending') {
+        backgroundColor = '#fce4a6';
+    } else if (s === 'accepted') {
+        backgroundColor = '#c8d3b0';
+    } else if (s === 'rejected' || s === 'cancelled') {
+        backgroundColor = '#ff8a8a';
     }
 
     return {
@@ -221,7 +523,7 @@ const statusBadgeStyle = (status) => {
     };
 };
 
-// Стили кнопок действий
+// стили кнопок действий
 const actionButtonsContainerStyle = {
     display: 'flex',
     justifyContent: 'space-around',
@@ -240,22 +542,19 @@ const confirmButtonStyle = {
     flex: 1,
 };
 
-const rejectButtonStyle = {
-    backgroundColor: '#ff8a8a', // Яркий красный
-    color: textColor,
-    border: 'none',
-    borderRadius: '6px',
-    padding: '10px 15px',
-    cursor: 'pointer',
-    fontWeight: 'bold',
-    flex: 1,
-};
-
 const closeButtonStyle = {
     position: 'absolute',
     top: '10px',
     right: '15px',
-    fontSize: '1.2em',
-    color: '#666',
+    width: '30px',
+    height: '30px',
+    borderRadius: '8px',
+    border: 'none',
+    fontSize: '1.1em',
+    lineHeight: '30px',
     cursor: 'pointer',
+    color: '#666',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
 };

@@ -1,25 +1,28 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { registerUser } from '../api/authApi'; // <-- Убедитесь, что этот путь правильный
 
-// --- Бежевая палитра для единообразия ---
+// бежевая палитра для
 const primaryColor = '#a89d70';   
 const darkBeigeColor = '#eae7dd'; 
 
 export default function Register() {
-    // Изменяем state, чтобы соответствовать модели User на бэкенде
+    // изменяем чтобы соответствовать
     const [username, setUsername] = useState(''); 
+    const [email, setEmail] = useState('');
     const [location, setLocation] = useState(''); // Добавлено поле location
     const [password, setPassword] = useState('');
     const [passwordConfirm, setPasswordConfirm] = useState('');
     const [message, setMessage] = useState(''); 
+    const [profileImage, setProfileImage] = useState(null); // data URL (optional)
+    const navigate = useNavigate();
     
-    // Внимание: поле rating мы устанавливаем при отправке по умолчанию (5.0) для простоты
+    // внимание поле важный
 
     const handleSubmit = async (e) => { // <-- Обязательно 'async'
         e.preventDefault();
         
-        // !!! ЛОГИРОВАНИЕ ДЛЯ ДИАГНОСТИКИ !!!
+        // логирование диагностики для
         console.log('--- STARTING SUBMIT ---'); 
         
         setMessage('');
@@ -31,29 +34,36 @@ export default function Register() {
         }
 
         try {
-            // Данные для отправки на бэкенд, соответствующие модели User
+            // данные отправки для
             const userData = {
                 username: username,
                 password: password,
+                email: email,
                 location: location,
-                rating: 5.0 // Устанавливаем базовый рейтинг
+                rating: 5.0, // Устанавливаем базовый рейтинг
+                profileImage: profileImage // optional
             };
             
             console.log('Data sent to API:', userData); // Логируем отправляемые данные
 
             const newUser = await registerUser(userData); // <-- Вызов API
 
-            // Если запрос успешен (статус 201 Created)
+            // запрос успешен если
             setMessage(`Успешная регистрация! ID: ${newUser.id}`);
             
-            // Очистка формы
+            // очистка формы важный
             setUsername('');
+            setEmail('');
             setLocation('');
             setPassword('');
             setPasswordConfirm('');
+            setProfileImage(null);
+
+            // после успешной регистрации
+            navigate('/', { replace: true });
 
         } catch (error) {
-            // Обработка ошибок
+            // обработка ошибок важный
             setMessage('Ошибка регистрации. Проверьте консоль браузера и терминал бэкенда.');
             console.error('Registration error details:', error);
         }
@@ -74,6 +84,16 @@ export default function Register() {
                         required
                         style={inputStyle}
                     />
+
+                    {/* Поле Почта (email) */}
+                    <input
+                        type="email"
+                        placeholder="Почта"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        style={inputStyle}
+                    />
                     
                     {/* Поле Местоположение (location) */}
                     <input
@@ -84,6 +104,37 @@ export default function Register() {
                         required
                         style={inputStyle}
                     />
+
+                    {/* Фото профиля (необязательно) */}
+                    <div style={fileFieldStyle}>
+                        <label style={fileLabelStyle}>
+                            Фото профиля (необязательно)
+                        </label>
+                        <label style={chooseFileButtonStyle}>
+                            Выберите файл
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => {
+                                    const file = e.target.files && e.target.files[0];
+                                    if (!file) {
+                                        setProfileImage(null);
+                                        return;
+                                    }
+                                    const reader = new FileReader();
+                                    reader.onload = () => setProfileImage(String(reader.result));
+                                    reader.readAsDataURL(file);
+                                }}
+                                style={hiddenFileInputStyle}
+                            />
+                        </label>
+
+                        {profileImage ? (
+                            <div style={previewWrapStyle}>
+                                <img src={profileImage} alt="Фото профиля" style={previewImgStyle} />
+                            </div>
+                        ) : null}
+                    </div>
 
                     {/* Поле Пароль */}
                     <input
@@ -125,7 +176,7 @@ export default function Register() {
     );
 }
 
-// --- Стили ---
+// стили важный ключевой
 const containerStyle = {
     display: 'flex',
     justifyContent: 'center',
@@ -185,4 +236,48 @@ const linkStyle = {
     color: primaryColor,
     textDecoration: 'none',
     fontWeight: 'bold',
+};
+
+const fileFieldStyle = {
+    textAlign: 'left',
+};
+
+const fileLabelStyle = {
+    display: 'block',
+    fontSize: '0.9em',
+    color: '#666',
+    marginBottom: '6px',
+};
+
+const hiddenFileInputStyle = {
+    display: 'none',
+};
+
+const chooseFileButtonStyle = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    height: '42px',
+    borderRadius: '8px',
+    border: '1px solid rgba(168, 157, 112, 0.55)',
+    backgroundColor: 'white',
+    color: primaryColor,
+    fontWeight: 'bold',
+    cursor: 'pointer',
+    userSelect: 'none',
+};
+
+const previewWrapStyle = {
+    marginTop: '10px',
+    display: 'flex',
+    justifyContent: 'center',
+};
+
+const previewImgStyle = {
+    width: '90px',
+    height: '90px',
+    borderRadius: '50%',
+    objectFit: 'cover',
+    border: '2px solid rgba(168, 157, 112, 0.35)',
 };

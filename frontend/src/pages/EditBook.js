@@ -1,13 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { createBook } from '../api/BookApi'; // импорт функции для отправки книги
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { getBookById, updateBook } from '../api/BookApi';
 import { lookupCoverUrlByTitleAuthor } from '../api/coverApi';
 
-// палитра важный ключевой
-const primaryColor = '#a89d70';   
-const darkBeigeColor = '#eae7dd'; 
+const primaryColor = '#a89d70';
+const darkBeigeColor = '#eae7dd';
 
-
-// жанры состояния важный
 const GENRES = [
     'Роман',
     'Фантастика',
@@ -19,6 +17,7 @@ const GENRES = [
     'Поэзия',
     'Другое'
 ];
+
 const CONDITIONS = [
     'Новое',
     'Очень хорошее',
@@ -27,8 +26,12 @@ const CONDITIONS = [
     'Плохое'
 ];
 
-export default function AddBook() {
-    // состояние всех для
+export default function EditBook() {
+    const { id } = useParams();
+    const navigate = useNavigate();
+
+    const [isBackHovered, setIsBackHovered] = useState(false);
+
     const [bookData, setBookData] = useState({
         title: '',
         author: '',
@@ -36,25 +39,58 @@ export default function AddBook() {
         description: '',
         condition: CONDITIONS[0],
         coverUrl: '',
-        status: 'available' // статус по умолчанию
+        status: 'available'
     });
+
+    const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState('');
     const [isError, setIsError] = useState(false);
+
     const [coverTouched, setCoverTouched] = useState(false);
     const [coverLookupStatus, setCoverLookupStatus] = useState('');
     const lookupTimerRef = useRef(null);
 
-    // обработчик изменений важный
+    useEffect(() => {
+        let isActive = true;
+
+        const load = async () => {
+            setLoading(true);
+            setMessage('');
+            setIsError(false);
+
+            try {
+                const b = await getBookById(id);
+                if (!isActive) return;
+
+                setBookData({
+                    title: b?.title || '',
+                    author: b?.author || '',
+                    genre: b?.genre || GENRES[0],
+                    description: b?.description || '',
+                    condition: b?.condition || CONDITIONS[0],
+                    coverUrl: b?.coverUrl || '',
+                    status: b?.status || 'available'
+                });
+                setCoverTouched(false);
+            } catch (e) {
+                if (!isActive) return;
+                setMessage('Не удалось загрузить данные книги.');
+                setIsError(true);
+            } finally {
+                if (isActive) setLoading(false);
+            }
+        };
+
+        load();
+        return () => {
+            isActive = false;
+        };
+    }, [id]);
+
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setBookData(prev => ({
-            ...prev,
-            [name]: value
-        }));
-
-        if (name === 'coverUrl') {
-            setCoverTouched(true);
-        }
+        setBookData(prev => ({ ...prev, [name]: value }));
+        if (name === 'coverUrl') setCoverTouched(true);
     };
 
     const handleCoverFileChange = (e) => {
@@ -86,10 +122,7 @@ export default function AddBook() {
         setCoverLookupStatus('Ищу обложку...');
         const url = await lookupCoverUrlByTitleAuthor(title, author);
         if (url) {
-            setBookData(prev => ({
-                ...prev,
-                coverUrl: url
-            }));
+            setBookData(prev => ({ ...prev, coverUrl: url }));
             if (!force) setCoverTouched(false);
             setCoverLookupStatus('Обложка найдена и подставлена автоматически.');
         } else {
@@ -97,20 +130,15 @@ export default function AddBook() {
         }
     };
 
-    // авто подбора обложки
     useEffect(() => {
-        if (lookupTimerRef.current) {
-            clearTimeout(lookupTimerRef.current);
-        }
+        if (lookupTimerRef.current) clearTimeout(lookupTimerRef.current);
 
         const title = (bookData.title || '').trim();
         const author = (bookData.author || '').trim();
-
         if (title.length < 2 || author.length < 2) {
             setCoverLookupStatus('');
             return;
         }
-
         if (coverTouched) return;
 
         lookupTimerRef.current = setTimeout(() => {
@@ -123,58 +151,67 @@ export default function AddBook() {
         // комментарий важный ключевой
     }, [bookData.title, bookData.author, coverTouched]);
 
-    // обработчик отправки формы
     const handleSubmit = async (e) => {
         e.preventDefault();
         setMessage('');
         setIsError(false);
 
-
-
         try {
-            // отправка данных важный
-            const newBook = await createBook(bookData); 
-            
-            setMessage(`книга "${newBook.title}" успешно добавлена! id: ${newBook.id}`);
-            
-            // очистка формы после
-            setBookData({
-                title: '',
-                author: '',
-                genre: GENRES[0],
-                description: '',
-                condition: CONDITIONS[0],
-                coverUrl: '',
-                status: 'available'
-            });
-            setCoverTouched(false);
-            setCoverLookupStatus('');
-
-        } catch (error) {
-            // обработка ошибки например
-            let errorMessage = 'ошибка при добавлении книги. проверьте консоль.';
-            if (error.response && error.response.status === 400) {
-                errorMessage = 'ошибка: пользователь с таким id не найден. проверьте owner id.';
+            const updated = await updateBook(id, bookData);
+            setMessage(`Книга "${updated.title}" обновлена.`);
+            setIsError(false);
+            setTimeout(() => navigate(`/books/${id}`), 400);
+        } catch (err) {
+            if (err?.response?.status === 403) {
+                setMessage('Нет прав на редактирование этой книги.');
+            } else if (err?.response?.status === 401) {
+                setMessage('Сессия истекла. Войдите в аккаунт заново.');
+            } else {
+                setMessage('Не удалось обновить книгу.');
             }
-            setMessage(errorMessage);
             setIsError(true);
         }
     };
 
+    if (loading) {
+        return (
+            <div style={containerStyle}>
+                <div style={cardStyle}>
+                    <h1 style={headerStyle}>Загрузка...</h1>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div style={containerStyle}>
             <div style={cardStyle}>
-                <h1 style={headerStyle}>Добавить книгу для обмена</h1>
-                
-                {/* сообщение об успехе/ошибке */}
-                {message && (
-                    <p style={{ ...messageStyle, color: isError ? 'red' : primaryColor }}>
-                        {message}
-                    </p>
-                )}
+                <div style={headerStackStyle}>
+                    <h1 style={{ ...headerStyle, marginBottom: 0, textAlign: 'center' }}>Редактировать книгу</h1>
+                    <div style={headerSubRowStyle}>
+                        <Link
+                            to={`/books/${id}`}
+                            style={{
+                                ...backButtonStyle,
+                                backgroundColor: isBackHovered ? primaryColor : 'white',
+                                color: isBackHovered ? 'white' : primaryColor,
+                                borderColor: isBackHovered ? primaryColor : 'rgba(168, 157, 112, 0.55)',
+                                transform: isBackHovered ? 'translateY(-1px)' : 'translateY(0)',
+                                boxShadow: isBackHovered ? `0 5px 12px ${primaryColor}40` : 'none',
+                            }}
+                            onMouseEnter={() => setIsBackHovered(true)}
+                            onMouseLeave={() => setIsBackHovered(false)}
+                        >
+                            ← Назад
+                        </Link>
+                    </div>
+                </div>
+
+                {message ? (
+                    <p style={{ ...messageStyle, color: isError ? 'red' : primaryColor }}>{message}</p>
+                ) : null}
 
                 <form onSubmit={handleSubmit} style={formStyle}>
-                    {/* поле: название */}
                     <input
                         type="text"
                         name="title"
@@ -185,7 +222,6 @@ export default function AddBook() {
                         style={inputStyle}
                     />
 
-                    {/* поле: автор */}
                     <input
                         type="text"
                         name="author"
@@ -196,7 +232,6 @@ export default function AddBook() {
                         style={inputStyle}
                     />
 
-                    {/* фото/обложка */}
                     <div style={{ textAlign: 'left' }}>
                         <label style={labelStyle}>Фото / обложка (URL)</label>
                         <input
@@ -226,9 +261,7 @@ export default function AddBook() {
                             </button>
                         </div>
                         {coverLookupStatus ? (
-                            <div style={{ marginTop: 8, color: '#666', fontSize: '0.9em' }}>
-                                {coverLookupStatus}
-                            </div>
+                            <div style={{ marginTop: 8, color: '#666', fontSize: '0.9em' }}>{coverLookupStatus}</div>
                         ) : null}
                         {bookData.coverUrl ? (
                             <div style={{ marginTop: 12 }}>
@@ -245,7 +278,6 @@ export default function AddBook() {
                         ) : null}
                     </div>
 
-                    {/* поле: жанр (select) */}
                     <select
                         name="genre"
                         value={bookData.genre}
@@ -258,17 +290,15 @@ export default function AddBook() {
                         ))}
                     </select>
 
-                    {/* поле: описание */}
                     <textarea
                         name="description"
                         placeholder="краткое описание"
                         value={bookData.description}
                         onChange={handleChange}
                         required
-                        style={{...inputStyle, height: '100px'}}
+                        style={{ ...inputStyle, height: '100px' }}
                     />
 
-                    {/* поле: состояние (select) */}
                     <select
                         name="condition"
                         value={bookData.condition}
@@ -281,17 +311,8 @@ export default function AddBook() {
                         ))}
                     </select>
 
-
-
-                    {/* поле: статус (скрыто, по умолчанию 'available') */}
-                    <input
-                        type="hidden"
-                        name="status"
-                        value={bookData.status}
-                    />
-
                     <button type="submit" style={buttonStyle}>
-                        Добавить книгу
+                        Сохранить
                     </button>
                 </form>
             </div>
@@ -299,27 +320,54 @@ export default function AddBook() {
     );
 }
 
-// стили важный ключевой
 const containerStyle = {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    minHeight: '60vh', 
+    minHeight: '60vh',
 };
 
 const cardStyle = {
     backgroundColor: darkBeigeColor,
-    padding: '40px',
+    padding: '22px 40px 40px',
     borderRadius: '10px',
     boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)',
     width: '100%',
-    maxWidth: '500px',
+    maxWidth: '520px',
     textAlign: 'center',
 };
 
 const headerStyle = {
     color: primaryColor,
-    marginBottom: '30px',
+    marginBottom: '18px',
+    lineHeight: 1.1,
+};
+
+const headerStackStyle = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 14,
+    marginBottom: 16,
+};
+
+const headerSubRowStyle = {
+    display: 'flex',
+    justifyContent: 'flex-start',
+};
+
+const backButtonStyle = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    textDecoration: 'none',
+    transition: 'all 0.2s ease-out',
+    padding: '10px 14px',
+    borderRadius: '10px',
+    fontWeight: 'bold',
+    fontSize: '1.02em',
+    lineHeight: 1,
+    border: '1px solid rgba(168, 157, 112, 0.55)',
+    width: 'fit-content',
 };
 
 const formStyle = {
@@ -334,6 +382,24 @@ const inputStyle = {
     border: '1px solid #ccc',
     fontSize: '1em',
     backgroundColor: 'white',
+};
+
+const buttonStyle = {
+    backgroundColor: primaryColor,
+    color: 'white',
+    border: 'none',
+    padding: '12px 20px',
+    borderRadius: '5px',
+    fontSize: '1.1em',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+    marginTop: '10px',
+    transition: 'background-color 0.2s',
+};
+
+const messageStyle = {
+    marginBottom: '15px',
+    fontWeight: 'bold',
 };
 
 const labelStyle = {
@@ -372,22 +438,4 @@ const coverPreviewStyle = {
     objectFit: 'cover',
     borderRadius: 8,
     border: '1px solid rgba(0,0,0,0.08)',
-};
-
-const buttonStyle = {
-    backgroundColor: primaryColor,
-    color: 'white',
-    border: 'none',
-    padding: '12px 20px',
-    borderRadius: '5px',
-    fontSize: '1.1em',
-    fontWeight: 'bold',
-    cursor: 'pointer',
-    marginTop: '10px',
-    transition: 'background-color 0.2s',
-};
-
-const messageStyle = {
-    marginBottom: '15px',
-    fontWeight: 'bold',
 };

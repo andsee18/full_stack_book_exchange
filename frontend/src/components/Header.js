@@ -1,185 +1,148 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
-// --- ЕДИНАЯ ПАЛИТРА ---
-const primaryColor = '#a89d70';     // Основной бежевый акцент
-const hoverColor = '#948a65';       // Бежевый акцент для наведения
-const headerBackground = '#eae7dd'; // Фон хедера
-const textColor = '#3c3838';        // Основной текст
-const lightBackground = '#fdfcf7';  // Светлый фон приложения
-
-// --- СТИЛИ КНОПОК И ХЕДЕРА ---
+const primaryColor = '#a89d70';
+const hoverColor = '#948a65';
+const headerBackground = '#eae7dd';
+const textColor = '#3c3838';
+const lightBackground = '#fdfcf7';
 
 const logoStyle = {
-    textDecoration: 'none',
-    color: primaryColor,
-    fontSize: '1.8em',
-    fontWeight: 'bold',
-    transition: 'color 0.2s',
+	color: primaryColor,
+	fontSize: '2.1em',
+	fontWeight: 900,
+	letterSpacing: '1.5px',
+	textShadow: '0 2px 8px #eae7dd, 0 1px 0 #fff',
+	display: 'inline-block',
+	whiteSpace: 'nowrap',
 };
 
 const navStyle = {
-    display: 'flex',
-    gap: '15px', 
-    alignItems: 'center',
+	display: 'flex',
+	gap: '15px',
+	alignItems: 'center',
 };
 
-// Базовый стиль для навигационных ссылок
+const basePillStyle = {
+	border: 'none',
+	borderRadius: '12px',
+	cursor: 'pointer',
+	fontSize: '1em',
+	fontWeight: 600,
+	textDecoration: 'none',
+	transition: 'all 0.18s',
+	padding: '0 18px',
+	height: '42px',
+	display: 'inline-flex',
+	alignItems: 'center',
+	justifyContent: 'center',
+	lineHeight: 1,
+	whiteSpace: 'nowrap',
+};
+
 const navLinkStyle = {
-    textDecoration: 'none',
-    color: textColor,
-    fontWeight: '500',
-    padding: '10px 15px',
-    borderRadius: '8px',
-    transition: 'all 0.3s ease-out',
-    fontSize: '1.05em',
+	...basePillStyle,
+	backgroundColor: 'transparent',
+	boxShadow: 'none',
+	color: textColor,
 };
 
-// Базовый стиль для кнопок действия/аутентификации
 const actionButtonStyle = {
-    // Стилизация как для кнопки
-    appearance: 'none', // Сброс стилей браузера для кнопки
-    border: 'none',
-    cursor: 'pointer',
-
-    textDecoration: 'none',
-    backgroundColor: primaryColor,
-    color: 'white',
-    padding: '10px 20px',
-    borderRadius: '25px',
-    fontWeight: 'bold',
-    boxShadow: `0 3px 8px ${primaryColor}40`,
-    transition: 'all 0.3s ease-out',
-    marginLeft: '10px',
-    fontSize: '1em',
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+	...basePillStyle,
+	appearance: 'none',
+	backgroundColor: primaryColor,
+	color: 'white',
+	padding: '0 22px',
 };
 
-// --- ЕДИНЫЙ КОМПОНЕНТ ДЛЯ КНОПОК/ССЫЛОК С АНИМАЦИЕЙ ---
-// Принимает `isButton` для отображения либо <Link>, либо <button>
-const InteractiveElement = ({ to, children, isAction = false, onClick, title }) => {
-    const [isHovered, setIsHovered] = useState(false);
-    
-    // Выбираем базовый стиль
-    const baseStyle = isAction ? actionButtonStyle : navLinkStyle;
-    
-    // Определяем динамические стили при наведении
-    const hoverStyles = isAction ? {
-        backgroundColor: hoverColor,
-        transform: 'translateY(-1px) scale(1.02)',
-        boxShadow: `0 5px 12px ${primaryColor}60`,
-    } : {
-        color: hoverColor,
-        backgroundColor: lightBackground,
-        transform: 'translateY(-1px) scale(1.02)',
-        boxShadow: `0 3px 8px rgba(0, 0, 0, 0.1)`,
-    };
+function InteractiveElement({ to, children, onClick, isAction = false, title }) {
+	const [isHovered, setIsHovered] = useState(false);
+	const baseStyle = isAction ? actionButtonStyle : navLinkStyle;
 
-    const elementProps = {
-        style: {
-            ...baseStyle,
-            ...(isHovered ? hoverStyles : {}),
-        },
-        onMouseEnter: () => setIsHovered(true),
-        onMouseLeave: () => setIsHovered(false),
-        title: title,
-    };
+	const hoverStyles = isAction
+		? {
+			backgroundColor: hoverColor,
+			transform: 'translateY(-1px) scale(1.02)',
+			boxShadow: `0 5px 12px ${primaryColor}60`,
+		}
+		: {
+			color: hoverColor,
+			backgroundColor: lightBackground,
+			transform: 'translateY(-1px) scale(1.02)',
+			boxShadow: '0 3px 8px rgba(0, 0, 0, 0.1)',
+		};
 
-    if (onClick) {
-        // Это кнопка (например, "Выйти" или "Войти (тест)")
-        return (
-            <button 
-                {...elementProps} 
-                onClick={onClick}
-            >
-                {children}
-            </button>
-        );
-    }
+	const elementProps = {
+		title,
+		style: {
+			...baseStyle,
+			...(isHovered ? hoverStyles : {}),
+		},
+		onMouseEnter: () => setIsHovered(true),
+		onMouseLeave: () => setIsHovered(false),
+	};
 
-    // Это Link (например, "Профиль" или "Войти")
-    return (
-        <Link
-            to={to}
-            {...elementProps}
-        >
-            {children}
-        </Link>
-    );
-};
+	if (onClick) {
+		return (
+			<button type="button" {...elementProps} onClick={onClick}>
+				{children}
+			</button>
+		);
+	}
 
+	return (
+		<Link to={to} {...elementProps}>
+			{children}
+		</Link>
+	);
+}
 
-// --- Основной компонент Header ---
 export default function Header() {
-    // Состояние авторизации
-    const [isLoggedIn, setIsLoggedIn] = useState(false); 
+	const { user, logout } = useAuth();
+	const isLoggedIn = !!user;
 
-    // Функция выхода
-    const handleLogout = () => {
-        setIsLoggedIn(false);
-        // Тут будет реальная очистка токена
-        console.log('Выход выполнен (тест)');
-    };
-    
-    // Функция входа (для тестирования UI)
-    const handleLoginToggle = () => {
-        setIsLoggedIn(true);
-        console.log('Вход выполнен (тест)');
-    };
+	const handleLogout = async () => {
+		await logout();
+	};
 
+	return (
+		<header
+			style={{
+				backgroundColor: headerBackground,
+				padding: '18px 120px',
+				minHeight: '72px',
+				boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+				display: 'flex',
+				justifyContent: 'space-between',
+				alignItems: 'center',
+				borderBottom: `1px solid ${primaryColor}30`,
+				boxSizing: 'border-box',
+			}}
+		>
+			<span style={logoStyle}>Book Exchange</span>
 
-    return (
-        <header style={{
-            backgroundColor: headerBackground,
-            padding: '15px 50px',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            borderBottom: `2px solid ${primaryColor}30`,
-        }}>
-            
-            <Link to="/" style={logoStyle}>
-                <span style={{marginRight: '10px'}} role="img" aria-label="Books">📚</span>
-                Book Exchange
-            </Link>
-
-            <nav style={navStyle}>
-                
-                {/* Каталог всегда виден */}
-                <InteractiveElement to="/">Каталог</InteractiveElement>
-
-                {isLoggedIn ? (
-                    //КНОПКИ ДЛЯ АВТОРИЗОВАННОГО ПОЛЬЗОВАТЕЛЯ
-                    <>
-                        <InteractiveElement to="/add-book">➕ Добавить книгу</InteractiveElement>
-                        <InteractiveElement to="/exchanges">🔄 Обмены</InteractiveElement>
-                        <InteractiveElement to="/profile">👤 Профиль</InteractiveElement>
-                        <InteractiveElement 
-                            onClick={handleLogout} // Используем onClick для кнопки, а не to
-                            isAction={true} // Стиль кнопки действия
-                            title="Выйти из аккаунта (тест)"
-                        >
-                            Выйти
-                        </InteractiveElement>
-                    </>
-                ) : (
-                    //КНОПКИ ДЛЯ НЕАВТОРИЗОВАННОГО ПОЛЬЗОВАТЕЛЯ
-                    <>
-                        <InteractiveElement to="/login" isAction={true}>Войти</InteractiveElement>
-                        <InteractiveElement to="/register" isAction={true}>Регистрация</InteractiveElement>
-                         <InteractiveElement 
-                            onClick={handleLoginToggle} 
-                            isAction={true}
-                            title="Нажмите, чтобы увидеть кнопки для авторизованного пользователя"
-                        >
-                            Войти (тест)
-                        </InteractiveElement>
-                    </>
-                )}
-            </nav>
-        </header>
-    );
+			<nav style={navStyle}>
+				<InteractiveElement to="/">Каталог</InteractiveElement>
+				{isLoggedIn ? (
+					<>
+						<InteractiveElement to="/add-book">Добавить книгу</InteractiveElement>
+						<InteractiveElement to="/profile">Профиль</InteractiveElement>
+						<InteractiveElement onClick={handleLogout} isAction={true} title="Выйти из аккаунта">
+							Выйти
+						</InteractiveElement>
+					</>
+				) : (
+					<>
+						<InteractiveElement to="/login" isAction={true}>
+							Войти
+						</InteractiveElement>
+						<InteractiveElement to="/register" isAction={true}>
+							Регистрация
+						</InteractiveElement>
+					</>
+				)}
+			</nav>
+		</header>
+	);
 }

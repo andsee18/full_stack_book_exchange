@@ -1,59 +1,63 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { loginUser } from '../api/authApi'; // импорт функции api
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
-// --- бежевая палитра для единообразия ---
+// бежевая палитра для
 const primaryColor = '#a89d70';   
 const darkBeigeColor = '#eae7dd'; 
 
 export default function Login() {
-    // меняем email на username для соответствия бэкенду
-    const [username, setUsername] = useState(''); 
-    const [password, setPassword] = useState('');
-    // состояние для вывода сообщений пользователю
-    const [message, setMessage] = useState(''); 
+    // меняем для важный
+    const [username, setUsername] = useState(''); 
+    const [password, setPassword] = useState('');
+    // состояние вывода для
+    const [message, setMessage] = useState('');
+    const navigate = useNavigate();
+    const { login } = useAuth();
 
-    // асинхронная функция обработки отправки формы
-    const handleSubmit = async (e) => { // обязательно async
-        e.preventDefault();
+    // асинхронная функция обработки
+    const handleSubmit = async (e) => { // обязательно async
+        e.preventDefault();
         setMessage(''); // очистить предыдущее сообщение
 
-        // логируем попытку входа для отладки
-        console.log('login attempt:', { username, password });
+        // логируем попытку входа
+        console.log('login attempt:', { username, password });
         
         try {
-            const credentials = { username, password };
+            // вызов функции контекста
+            const success = await login(username, password);
             
-            // вызов функции api для входа
-            const user = await loginUser(credentials);
-            
-            // вход успешен
-            setMessage(`вход успешен! приветствуем ${user.username}.`);
-            // в реальном приложении: сохранить данные пользователя в localstorage/context
-            
-            // опционально: очистить поля
-            setUsername('');
-            setPassword('');
+            if (success) {
+                // вход успешен важный
+                setMessage(`Вход успешен! Приветствуем ${username}.`);
+                // очистить поля важный
+                setUsername('');
+                setPassword('');
+                // перенаправить главную важный
+                setTimeout(() => navigate('/'), 1500);
+            } else {
+                setMessage('Ошибка входа: неверное имя пользователя или пароль.');
+            }
 
         } catch (error) {
-            // вход не удался (например, 401 unauthorized)
+            // вход удался важный
             if (error.response && error.response.status === 401) {
-                setMessage('ошибка входа: неверное имя пользователя или пароль.');
+                setMessage('Ошибка входа: неверное имя пользователя или пароль.');
             } else {
-                setMessage('ошибка входа. проверьте соединение с сервером.');
+                setMessage('Ошибка входа. Проверьте соединение с сервером.');
             }
         }
-    };
+    };
 
-    return (
+    return (
         <div style={containerStyle}>
             <div style={cardStyle}>
-                <h1 style={headerStyle}>вход в систему</h1>
+                   <h1 style={headerStyle}>Вход в систему</h1>
                 <form onSubmit={handleSubmit} style={formStyle}>
                     
                     <input
                         type="text" // используем text для username
-                        placeholder="имя пользователя"
+                           placeholder="Имя пользователя"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
                         required
@@ -62,7 +66,7 @@ export default function Login() {
                     
                     <input
                         type="password"
-                        placeholder="пароль"
+                           placeholder="Пароль"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
@@ -70,7 +74,7 @@ export default function Login() {
                     />
                     
                     <button type="submit" style={buttonStyle}>
-                        войти
+                           Войти
                     </button>
                 </form>
                 
@@ -78,21 +82,21 @@ export default function Login() {
                 {message && (
                     <p style={{ 
                         marginTop: '15px', 
-                        color: message.startsWith('успешен') ? primaryColor : 'red' 
+                        color: message.toLowerCase().includes('успешен') ? primaryColor : 'red' 
                     }}>
                         {message}
                     </p>
                 )}
 
-                <p style={footerTextStyle}>
-                    ещё нет аккаунта? <Link to="/register" style={linkStyle}>зарегистрироваться</Link>
-                </p>
+                   <p style={footerTextStyle}>
+                       Еще нет аккаунта? <Link to="/register" style={linkStyle}>Зарегистрироваться</Link>
+                   </p>
             </div>
         </div>
     );
 }
 
-// --- стили ---
+// стили важный ключевой
 const containerStyle = {
     display: 'flex',
     justifyContent: 'center',

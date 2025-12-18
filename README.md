@@ -1,77 +1,81 @@
-# Book Exchange Full Stack Application
+# book exchange full stack
 
-Этот проект представляет собой платформу обмена книгами, разработанную с использованием современных Full Stack технологий. Он разделен на две основные части: **Backend (Java Spring Boot)** для обработки данных и **Frontend (React)** для пользовательского интерфейса.
+проект сервис для обмена книгами
+бэкенд на spring boot и фронтенд на react
 
----
+## что есть в проекте
 
-## Стек Технологий
+frontend
+каталог книг
+страница книги
+профиль пользователя
+логин и регистрация
+обмены и заявки на обмен
+рейтинг пользователей
 
-### Backend (bookexchange_backend)
+backend
+авторизация jwt access token и refresh token
+crud для пользователей и книг
+обмены между пользователями
+оценки и рейтинг
+sqlite база данных
 
-* **Язык:** Java 21+
-* **Фреймворк:** Spring Boot 3.3.x
-* **Сборщик:** Maven
-* **База данных:** SQLite
-* **Доступ к БД:** JdbcTemplate (чистый JDBC)
-* **Функционал:** Полный CRUD для сущности `User`.
+## как запустить
 
-### Frontend (frontend)
+### backend
 
-* **Библиотека:** React (JavaScript/TypeScript)
-* **Сборщик:** Vite / Create React App
+требования java 21 и maven
 
----
+перейти в папку
+```bash
+cd bookexchange_backend
+```
 
-## Запуск Проекта
+собрать
+```bash
+mvn clean install -DskipTests
+```
 
-### 1. Настройка и Запуск Backend
+запустить
+```bash
+java -jar target/backendjava-0.0.1-SNAPSHOT.jar
+```
 
-Для запуска бэкенда убедитесь, что у вас установлены **Java (JDK 21+)** и **Maven**.
+по умолчанию порт 5000
 
-1.  Перейдите в папку бэкенда:
-    ```bash
-    cd bookexchange_backend
-    ```
-2.  Соберите проект (это также создаст локальную базу данных `bookexchange.db`):
-    ```bash
-    mvn clean install -DskipTests
-    ```
-3.  Запустите сервер Spring Boot:
-    ```bash
-    java -jar target/backendjava-0.0.1-SNAPSHOT.jar
-    ```
-Сервер запустится на порту **`5000`**.
+### frontend
 
-### 2. Настройка и Запуск Frontend
+требования node js и npm
 
-Для запуска фронтенда убедитесь, что у вас установлен **Node.js** и **npm/yarn**.
+перейти в папку
+```bash
+cd frontend
+```
 
-1.  Перейдите в папку фронтенда:
-    ```bash
-    cd ../frontend
-    ```
-2.  Установите зависимости:
-    ```bash
-    npm install
-    # или
-    # yarn install
-    ```
-3.  Запустите клиентское приложение:
-    ```bash
-    npm start
-    # или
-    # yarn start
-    ```
+установить зависимости
+```bash
+npm install
+```
 
----
+запустить
+```bash
+npm start
+```
 
-## API Endpoints (Базовый CRUD для Пользователей)
+по умолчанию фронтенд на 3000
 
-Базовый URL бэкенда: `http://localhost:5000/api/users`
+## api
 
-| Метод | Путь | Описание |
-| :--- | :--- | :--- |
-| **POST** | `/api/users` | Создать нового пользователя |
-| **GET** | `/api/users/{id}` | Получить пользователя по ID |
-| **PUT** | `/api/users/{id}` | Обновить пользователя по ID |
-| **DELETE** | `/api/users/{id}` | Удалить пользователя по ID |
+база
+`http://localhost:5000/api`
+
+основные группы
+`/auth`
+`/users`
+`/books`
+`/exchange`
+`/ratings`
+
+## заметки
+
+локальная база sqlite не хранится в git

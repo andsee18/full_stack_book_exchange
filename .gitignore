@@ -4,6 +4,12 @@
 *.iws
 *.ipr
 
+# 1. LOCAL FILES
+/*.db
+/*.sqlite
+/*.sqlite3
+/.mvn/
+
 
 # 2. JAVA / SPRING BOOT BACKEND
 

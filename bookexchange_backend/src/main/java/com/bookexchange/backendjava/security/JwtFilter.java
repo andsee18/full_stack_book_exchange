@@ -10,6 +10,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.lang.NonNull;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -49,7 +50,8 @@ public class JwtFilter extends OncePerRequestFilter {
             // если токен битый/просрочен, не ставим аутентификацию; entrypoint вернет 401 на защищенных маршрутах
         }
 
-        if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+        var existingAuth = SecurityContextHolder.getContext().getAuthentication();
+        if (userId != null && (existingAuth == null || existingAuth instanceof AnonymousAuthenticationToken)) {
             try {
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(String.valueOf(userId));
 

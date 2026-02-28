@@ -18,6 +18,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import com.bookexchange.backendjava.security.JwtAuthenticationEntryPoint;
 import com.bookexchange.backendjava.security.JwtFilter;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.Arrays;
 
 @Configuration
@@ -36,7 +37,7 @@ public class SecurityBeansConfig implements WebMvcConfigurer {
         return new BCryptPasswordEncoder();
     }
     
-    // бин необходим для
+    // бин для аутентификации в сервисе 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
@@ -68,7 +69,12 @@ public class SecurityBeansConfig implements WebMvcConfigurer {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable()) // ОТКЛЮЧАЕМ CSRF для REST API (используем JWT)
-            .exceptionHandling(exception -> exception.authenticationEntryPoint(jwtAuthenticationEntryPoint))
+            .exceptionHandling(exception -> exception
+                .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                .accessDeniedHandler((request, response, accessDeniedException) ->
+                    response.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden")
+                )
+            )
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
@@ -77,6 +83,7 @@ public class SecurityBeansConfig implements WebMvcConfigurer {
                 .requestMatchers(HttpMethod.GET, "/api/users/me").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/users/*").permitAll()  // Публичный профиль владельца по id
                 .requestMatchers(HttpMethod.GET, "/api/books", "/api/books/", "/api/books/**").permitAll()  // Публичный каталог/детали
+                // доступ к списку всех пользователей только для админов
                 .requestMatchers(HttpMethod.GET, "/api/users", "/api/users/").hasRole("ADMIN")
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()

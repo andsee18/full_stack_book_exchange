@@ -79,3 +79,9 @@ npm start
 ## заметки
 
 локальная база sqlite не хранится в git
+
+## роли и доступ
+
+описание rbac роли права матрица и проверка на backend и frontend
+docs rbac
+см docs/rbac.md

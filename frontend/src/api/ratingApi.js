@@ -32,7 +32,9 @@ ratingApi.interceptors.response.use(
             originalRequest._retry = true;
 
             try {
-                const newToken = await refreshAccessToken();
+                const refreshed = await refreshAccessToken();
+                const newToken = typeof refreshed === 'string' ? refreshed : refreshed?.accessToken;
+                if (!newToken) throw new Error('No accessToken after refresh');
                 originalRequest.headers = originalRequest.headers || {};
                 originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
                 return ratingApi(originalRequest);

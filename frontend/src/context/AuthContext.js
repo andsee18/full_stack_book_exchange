@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { clearAccessToken, loginUser, logout as apiLogout, refreshAccessToken } from '../api/authApi';
+import { getMe } from '../api/userApi';
 
 export const AuthContext = createContext();
 
@@ -20,12 +21,32 @@ export function AuthProvider({ children }) {
 
       // комментарий важный ключевой
       window.__ACCESS_TOKEN = token;
-      if (isActive) setUser({ token });
+      if (isActive) setUser({ token, userId: null, role: null });
 
       // комментарий важный ключевой
       try {
-        const newToken = await refreshAccessToken();
-        if (isActive) setUser({ token: newToken });
+        const refreshed = await refreshAccessToken();
+        const newToken = refreshed?.accessToken || refreshed;
+
+        if (newToken) {
+          window.__ACCESS_TOKEN = newToken;
+        }
+
+        let me = null;
+        try {
+          me = await getMe();
+        } catch {
+          me = null;
+        }
+
+        if (isActive) {
+          setUser({
+            token: newToken || token,
+            userId: me?.id ?? (refreshed?.userId ?? null),
+            username: me?.username,
+            role: me?.role ?? (refreshed?.role ?? null),
+          });
+        }
       } catch {
         // комментарий важный ключевой
         clearAccessToken();
@@ -46,7 +67,20 @@ export function AuthProvider({ children }) {
       const response = await loginUser({ username, password });
       if (response && response.accessToken) {
         window.__ACCESS_TOKEN = response.accessToken;
-        setUser({ username, token: response.accessToken });
+
+        let me = null;
+        try {
+          me = await getMe();
+        } catch {
+          me = null;
+        }
+
+        setUser({
+          username: me?.username || username,
+          token: response.accessToken,
+          userId: me?.id ?? response.userId ?? null,
+          role: me?.role ?? response.role ?? null,
+        });
         return true;
       }
       return false;

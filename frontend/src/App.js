@@ -17,6 +17,8 @@ import UserProfile from './pages/UserProfile';
 import EditBook from './pages/EditBook';
 import Settings from './pages/Settings';
 
+import RequireAuth from './components/RequireAuth';
+
 function App() {
   return (
     // исправление должен оборачивать
@@ -25,15 +27,50 @@ function App() {
         <Routes>
           <Route path="/" element={<Catalog />} />
           <Route path="/books/:id" element={<BookDetail />} />
-          <Route path="/books/:id/edit" element={<EditBook />} />
+          <Route
+            path="/books/:id/edit"
+            element={
+              <RequireAuth>
+                <EditBook />
+              </RequireAuth>
+            }
+          />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/profile" element={<Profile />} /> 
+          <Route
+            path="/profile"
+            element={
+              <RequireAuth>
+                <Profile />
+              </RequireAuth>
+            }
+          />
           <Route path="/users/:id" element={<UserProfile />} />
           <Route path="/favorites" element={<Catalog isFavorites={true} />} /> 
-          <Route path="/exchanges" element={<Exchanges />} /> 
-          <Route path="/add-book" element={<AddBook />} /> 
-          <Route path="/settings" element={<Settings />} />
+          <Route
+            path="/exchanges"
+            element={
+              <RequireAuth>
+                <Exchanges />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/add-book"
+            element={
+              <RequireAuth>
+                <AddBook />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <RequireAuth>
+                <Settings />
+              </RequireAuth>
+            }
+          />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Layout>

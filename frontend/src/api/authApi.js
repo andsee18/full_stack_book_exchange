@@ -54,7 +54,7 @@ export const refreshAccessToken = async () => {
             const data = response.data;
             if (data && data.accessToken) {
                 setAccessToken(data.accessToken);
-                return data.accessToken;
+                return data;
             }
             throw new Error('No accessToken in refresh response');
         })

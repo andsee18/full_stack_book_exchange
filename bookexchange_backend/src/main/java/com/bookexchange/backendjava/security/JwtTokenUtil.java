@@ -22,12 +22,23 @@ public class JwtTokenUtil {
     }
 
     public String generateToken(Long userId) {
+        return generateToken(userId, null);
+    }
+
+    public String generateToken(Long userId, String role) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + jwtExpirationInMs);
-        return Jwts.builder()
+
+        JwtBuilder builder = Jwts.builder()
                 .setSubject(String.valueOf(userId))
                 .setIssuedAt(now)
-                .setExpiration(expiry)
+                .setExpiration(expiry);
+
+        if (role != null && !role.isBlank()) {
+            builder.claim("role", role.trim().toUpperCase());
+        }
+
+        return builder
                 .signWith(getSigningKey(), SignatureAlgorithm.HS512)
                 .compact();
     }

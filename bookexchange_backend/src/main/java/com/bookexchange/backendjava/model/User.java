@@ -13,6 +13,9 @@ public class User {
     private String location;
     private Double rating;
     private Integer ratingCount;
+
+    // роли важный
+    private String role;
     
     // обязателен десериализации для
     public User() {} 
@@ -44,6 +47,9 @@ public class User {
     public Integer getRatingCount() { return ratingCount; }
     public void setRatingCount(Integer ratingCount) { this.ratingCount = ratingCount; }
 
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
+
     @Override
     public String toString() {
         return "User{" +
@@ -53,6 +59,7 @@ public class User {
                 ", location='" + location + '\'' +
                 ", rating=" + rating +
                 ", ratingCount=" + ratingCount +
+                ", role='" + role + '\'' +
                 '}';
     }
 }

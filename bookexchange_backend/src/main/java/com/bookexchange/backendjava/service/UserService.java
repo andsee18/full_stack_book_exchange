@@ -41,10 +41,9 @@ public class UserService implements UserDetailsService {
         User user = userOptional
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with username or ID: " + usernameOrId));
 
-        // присваиваем аутентифицированному пользователю
-        List<SimpleGrantedAuthority> authorities = Collections.singletonList(
-            new SimpleGrantedAuthority("ROLE_USER") 
-        );
+        String role = user.getRole() != null && !user.getRole().isBlank() ? user.getRole().trim().toUpperCase() : "USER";
+        String authority = "ROLE_" + role;
+        List<SimpleGrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority(authority));
 
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(), 
@@ -71,6 +70,18 @@ public class UserService implements UserDetailsService {
         }
         // кодируем пароль важный
         user.setPassword(passwordEncoder.encode(user.getPassword()));
+
+        // назначаем роль по умолчанию
+        // для учебного проекта делаем первого зарегистрированного пользователя админом
+        try {
+            if (userRepository.countUsers() == 0) {
+                user.setRole("ADMIN");
+            } else {
+                user.setRole("USER");
+            }
+        } catch (Exception e) {
+            user.setRole("USER");
+        }
         if (user.getRating() == null) {
             user.setRating(0.0);
         }
@@ -78,6 +89,10 @@ public class UserService implements UserDetailsService {
             user.setRatingCount(0);
         }
         return userRepository.save(user);
+    }
+
+    public boolean setUserRole(Long userId, String role) {
+        return userRepository.updateRole(userId, role);
     }
 
     public Optional<User> findById(Long id) {

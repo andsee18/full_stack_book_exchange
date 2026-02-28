@@ -36,7 +36,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody User creds, HttpServletResponse response) {
         return userService.authenticate(creds.getUsername(), creds.getPassword()).map(user -> {
-            String accessToken = jwtTokenUtil.generateToken(user.getId());
+            String accessToken = jwtTokenUtil.generateToken(user.getId(), user.getRole());
             RefreshToken refresh = refreshTokenService.createRefreshToken(user);
 
             ResponseCookie cookie = ResponseCookie.from("refreshToken", refresh.getToken())
@@ -47,7 +47,12 @@ public class AuthController {
                     .secure(false)
                     .build();
             response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-            return ResponseEntity.ok(Map.of("accessToken", accessToken, "tokenType", "Bearer"));
+            return ResponseEntity.ok(Map.of(
+                    "accessToken", accessToken,
+                    "tokenType", "Bearer",
+                    "userId", user.getId(),
+                    "role", user.getRole() != null ? user.getRole() : "USER"
+            ));
         }).orElseGet(() -> ResponseEntity.status(401).body(java.util.Map.of("error", "Invalid credentials")));
     }
 
@@ -80,7 +85,8 @@ public class AuthController {
 
         return refreshTokenService.findByToken(tokenValue).map(rt -> {
             if (!refreshTokenService.verifyExpiration(rt)) return ResponseEntity.status(401).body(java.util.Map.of("error", "Refresh token expired"));
-            String newAccess = jwtTokenUtil.generateToken(rt.getUserId());
+            String role = userService.findById(rt.getUserId()).map(u -> u.getRole()).orElse("USER");
+            String newAccess = jwtTokenUtil.generateToken(rt.getUserId(), role);
             // комментарий важный ключевой
             ResponseCookie cookie = ResponseCookie.from("refreshToken", rt.getToken())
                     .httpOnly(true)
@@ -90,7 +96,12 @@ public class AuthController {
                     .secure(false)
                     .build();
             response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-            return ResponseEntity.ok(Map.of("accessToken", newAccess, "tokenType", "Bearer"));
+            return ResponseEntity.ok(Map.of(
+                    "accessToken", newAccess,
+                    "tokenType", "Bearer",
+                    "userId", rt.getUserId(),
+                    "role", role
+            ));
         }).orElseGet(() -> ResponseEntity.status(401).body(java.util.Map.of("error", "Invalid refresh token")));
     }
 

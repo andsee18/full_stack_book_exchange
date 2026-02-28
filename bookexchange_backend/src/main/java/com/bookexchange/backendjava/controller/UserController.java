@@ -70,7 +70,23 @@ public class UserController {
     // получить всех пользователей
     @GetMapping
     public List<User> findAll() {
+        // доступ ограничен на уровне security конфигурации
         return userService.findAll();
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> me() {
+        Long authUserId = getAuthenticatedUserId();
+        if (authUserId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        return userService.findById(authUserId)
+                .map(u -> {
+                    u.setPassword(null);
+                    return ResponseEntity.ok(u);
+                })
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
     }
 
     // получить пользователя важный

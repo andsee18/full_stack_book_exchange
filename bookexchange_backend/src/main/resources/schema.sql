@@ -7,13 +7,18 @@ CREATE TABLE IF NOT EXISTS users (
     profile_image TEXT,
     location VARCHAR(255),
     rating REAL,
-    rating_count INTEGER DEFAULT 0
+    rating_count INTEGER DEFAULT 0,
+    role VARCHAR(50) NOT NULL DEFAULT 'USER'
 );
 
 -- комментарий важный ключевой
 ALTER TABLE users ADD COLUMN email VARCHAR(255);
 ALTER TABLE users ADD COLUMN profile_image TEXT;
 ALTER TABLE users ADD COLUMN rating_count INTEGER DEFAULT 0;
+ALTER TABLE users ADD COLUMN role VARCHAR(50) DEFAULT 'USER';
+
+UPDATE users
+SET role = COALESCE(role, 'USER');
 
 -- комментарий важный ключевой
 CREATE TABLE IF NOT EXISTS user_ratings (

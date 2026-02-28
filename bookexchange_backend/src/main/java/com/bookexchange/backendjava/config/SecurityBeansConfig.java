@@ -74,8 +74,11 @@ public class SecurityBeansConfig implements WebMvcConfigurer {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/users/login", "/api/users/login/").permitAll()  // legacy login
                 .requestMatchers(HttpMethod.POST, "/api/users", "/api/users/").permitAll()  // Регистрация
+                .requestMatchers(HttpMethod.GET, "/api/users/me").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/users/*").permitAll()  // Публичный профиль владельца по id
                 .requestMatchers(HttpMethod.GET, "/api/books", "/api/books/", "/api/books/**").permitAll()  // Публичный каталог/детали
+                .requestMatchers(HttpMethod.GET, "/api/users", "/api/users/").hasRole("ADMIN")
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);

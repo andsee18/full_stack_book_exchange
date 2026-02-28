@@ -32,6 +32,11 @@ public class UserRepository {
         } catch (Exception ignored) {
             user.setRatingCount(0);
         }
+        try {
+            user.setRole(rs.getString("role"));
+        } catch (Exception ignored) {
+            user.setRole("USER");
+        }
         return user;
     };
 
@@ -41,11 +46,12 @@ public class UserRepository {
 
     // комментарий важный ключевой
     public User save(User user) {
-        final String sql = "INSERT INTO users (username, password, email, profile_image, location, rating, rating_count) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        final String sql = "INSERT INTO users (username, password, email, profile_image, location, rating, rating_count, role) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
         double rating = user.getRating() != null ? user.getRating() : 0.0;
         int ratingCount = user.getRatingCount() != null ? user.getRatingCount() : 0;
+        String role = user.getRole() != null && !user.getRole().isBlank() ? user.getRole().trim().toUpperCase() : "USER";
 
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
@@ -56,6 +62,7 @@ public class UserRepository {
             ps.setString(5, user.getLocation());
             ps.setDouble(6, rating);
             ps.setInt(7, ratingCount);
+            ps.setString(8, role);
             return ps;
         }, keyHolder);
 
@@ -68,7 +75,7 @@ public class UserRepository {
 
     // комментарий важный ключевой
     public Optional<User> findById(Long id) {
-        final String sql = "SELECT id, username, password, email, profile_image, location, rating, rating_count FROM users WHERE id = ?";
+        final String sql = "SELECT id, username, password, email, profile_image, location, rating, rating_count, role FROM users WHERE id = ?";
         try {
             User user = jdbcTemplate.queryForObject(sql, userRowMapper, id);
             return Optional.ofNullable(user);
@@ -79,7 +86,7 @@ public class UserRepository {
 
     //  поиск имени важный
     public Optional<User> findByUsername(String username) {
-        final String sql = "SELECT id, username, password, email, profile_image, location, rating, rating_count FROM users WHERE username = ?";
+        final String sql = "SELECT id, username, password, email, profile_image, location, rating, rating_count, role FROM users WHERE username = ?";
         try {
             User user = jdbcTemplate.queryForObject(sql, userRowMapper, username);
             return Optional.ofNullable(user);
@@ -90,16 +97,17 @@ public class UserRepository {
 
     // комментарий важный ключевой
     public List<User> findAll() {
-        final String sql = "SELECT id, username, password, email, profile_image, location, rating, rating_count FROM users";
+        final String sql = "SELECT id, username, password, email, profile_image, location, rating, rating_count, role FROM users";
         return jdbcTemplate.query(sql, userRowMapper);
     }
 
     // комментарий важный ключевой
     public int update(User user) {
-        final String sql = "UPDATE users SET username = ?, password = ?, email = ?, profile_image = ?, location = ?, rating = ?, rating_count = ? WHERE id = ?";
+        final String sql = "UPDATE users SET username = ?, password = ?, email = ?, profile_image = ?, location = ?, rating = ?, rating_count = ?, role = ? WHERE id = ?";
 
         double rating = user.getRating() != null ? user.getRating() : 0.0;
         int ratingCount = user.getRatingCount() != null ? user.getRatingCount() : 0;
+        String role = user.getRole() != null && !user.getRole().isBlank() ? user.getRole().trim().toUpperCase() : "USER";
         return jdbcTemplate.update(sql,
             user.getUsername(),
             user.getPassword(),
@@ -108,7 +116,20 @@ public class UserRepository {
             user.getLocation(),
             rating,
             ratingCount,
+            role,
             user.getId());
+    }
+
+    public long countUsers() {
+        final String sql = "SELECT COUNT(*) FROM users";
+        Long count = jdbcTemplate.queryForObject(sql, Long.class);
+        return count != null ? count : 0L;
+    }
+
+    public boolean updateRole(Long userId, String role) {
+        final String sql = "UPDATE users SET role = ? WHERE id = ?";
+        String normalized = role != null && !role.isBlank() ? role.trim().toUpperCase() : "USER";
+        return jdbcTemplate.update(sql, normalized, userId) > 0;
     }
 
     // комментарий важный ключевой

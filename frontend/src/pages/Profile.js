@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getUserById } from '../api/userApi';
-import { deleteBook, getAllBooks } from '../api/BookApi';
+import { deleteBook, getAllBooks } from '../api/bookApi';
 import {
     acceptExchangeRequest,
     cancelExchangeRequest,

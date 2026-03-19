@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getAllBooks } from '../api/BookApi';
+import { getAllBooks } from '../api/bookApi';
 import { getUserById } from '../api/userApi';
 import { getMyRatedExchangeIds, rateExchange } from '../api/ratingApi';
 import {

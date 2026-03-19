@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'; // добавлено useEffect
 import { Link } from 'react-router-dom';
-import { getAllBooks } from '../api/BookApi';
+import { getAllBooks } from '../api/bookApi';
 import { useAuth } from '../context/AuthContext';
 import { getUserIdFromJwt } from '../utils/jwt';
 import {

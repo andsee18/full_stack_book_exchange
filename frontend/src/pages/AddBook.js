@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { createBook } from '../api/BookApi'; // импорт функции для отправки книги
+import { createBook } from '../api/bookApi'; // импорт функции для отправки книги
 import { lookupCoverUrlByTitleAuthor } from '../api/coverApi';
 
 // палитра важный ключевой

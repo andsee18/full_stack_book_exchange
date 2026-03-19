@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getAllBooks, getBookById } from '../api/BookApi';
+import { getAllBooks, getBookById } from '../api/bookApi';
 import { getUserById } from '../api/userApi';
 import { createExchangeRequest, getOutgoingExchangeRequests } from '../api/exchangeApi';
 import { useAuth } from '../context/AuthContext';

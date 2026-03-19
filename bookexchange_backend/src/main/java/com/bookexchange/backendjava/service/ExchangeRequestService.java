@@ -15,18 +15,16 @@ public class ExchangeRequestService {
 
     private final ExchangeRequestRepository requestRepository;
     private final BookService bookService; 
-    // удалено важный ключевой
 
     public ExchangeRequestService(ExchangeRequestRepository requestRepository, BookService bookService) {
         this.requestRepository = requestRepository;
         this.bookService = bookService;
-        // удалено важный ключевой
     }
 
-    /* создает новый запрос */
+    // создание новой заявки на обмен
     public Optional<ExchangeRequest> createRequest(Long requestedBookId, Long offeredBookId) {
         
-        // извлекаем инициатора запроса
+        // получение id инициатора
         Long requesterId;
         try {
             String principalId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -35,7 +33,7 @@ public class ExchangeRequestService {
             return Optional.empty(); 
         }
 
-        // проверка запрашиваемой книги
+        // проверка доступности запрашиваемой книги
         Optional<Book> requestedBookOpt = bookService.findById(requestedBookId);
         if (requestedBookOpt.isEmpty() || !"available".equalsIgnoreCase(requestedBookOpt.get().getStatus())) {
             System.err.println("Requested book not found or not available.");
@@ -44,20 +42,20 @@ public class ExchangeRequestService {
         Book requestedBook = requestedBookOpt.get();
         Long recipientId = requestedBook.getOwnerId();
         
-        // проверка предлагаемой книги
+        // проверка доступности предлагаемой книги и прав владения
         Optional<Book> offeredBookOpt = bookService.findById(offeredBookId);
         if (offeredBookOpt.isEmpty() || !offeredBookOpt.get().getOwnerId().equals(requesterId) || !"available".equalsIgnoreCase(offeredBookOpt.get().getStatus())) {
             System.err.println("Offered book not found or does not belong to the requester.");
             return Optional.empty(); 
         }
         
-        // проверка пользователь важный
+        // предотвращение обмена с самим собой
         if (requesterId.equals(recipientId)) {
             System.err.println("Cannot exchange books with yourself.");
             return Optional.empty(); 
         }
         
-        // создание запроса важный
+        // сохранение заявки
         ExchangeRequest request = new ExchangeRequest();
         request.setRequestedBookId(requestedBookId);
         request.setOfferedBookId(offeredBookId);
@@ -68,7 +66,7 @@ public class ExchangeRequestService {
         return Optional.of(requestRepository.save(request));
     }
     
-    /* принятие запроса важный */
+    // принятие заявки на обмен
     @Transactional
     public boolean acceptRequest(Long requestId) {
         
@@ -78,7 +76,7 @@ public class ExchangeRequestService {
         }
         ExchangeRequest request = requestOpt.get();
         
-        // проверяем запрос что
+        // проверка прав получателя заявки
         Long currentUserId;
         try {
             String principalId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -92,12 +90,12 @@ public class ExchangeRequestService {
             return false; 
         }
         
-        // логика обмена важный
-        
-        // обновляем статус запроса
+        // выполнение обмена книг
+
+        // обновление статуса заявки
         requestRepository.updateStatus(requestId, "accepted");
         
-        // обновляем владельцев важный
+        // смена владельцев книг
         boolean requestedUpdated = bookService.updateOwnerAndStatus(request.getRequestedBookId(), request.getRequesterId(), "available");
         boolean offeredUpdated = bookService.updateOwnerAndStatus(request.getOfferedBookId(), request.getRecipientId(), "available");
 
@@ -108,7 +106,7 @@ public class ExchangeRequestService {
         return true;
     }
     
-    /* отклонение запроса важный */
+    // отклонение заявки
     public boolean rejectRequest(Long requestId) {
         Optional<ExchangeRequest> requestOpt = requestRepository.findById(requestId);
         if (requestOpt.isEmpty() || !requestOpt.get().getStatus().equals("pending")) {
@@ -116,7 +114,7 @@ public class ExchangeRequestService {
         }
         ExchangeRequest request = requestOpt.get();
         
-        // проверяем запрос что
+        // проверка прав доступа
         Long currentUserId;
         try {
             String principalId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -132,7 +130,7 @@ public class ExchangeRequestService {
         return requestRepository.updateStatus(requestId, "rejected") > 0;
     }
 
-    /* отмена запроса важный */
+    // отмена заявки инициатором
     public boolean cancelRequest(Long requestId) {
         Optional<ExchangeRequest> requestOpt = requestRepository.findById(requestId);
         if (requestOpt.isEmpty() || !requestOpt.get().getStatus().equals("pending")) {
@@ -155,7 +153,7 @@ public class ExchangeRequestService {
         return requestRepository.updateStatus(requestId, "cancelled") > 0;
     }
     
-    // получить все входящие
+    // получение входящих заявок
     public List<ExchangeRequest> getIncomingRequests() {
         Long currentUserId;
         try {
@@ -167,7 +165,7 @@ public class ExchangeRequestService {
         return requestRepository.findByRecipientId(currentUserId);
     }
     
-    // получить все исходящие
+    // получение исходящих заявок
     public List<ExchangeRequest> getOutgoingRequests() {
         Long currentUserId;
         try {
@@ -179,7 +177,7 @@ public class ExchangeRequestService {
         return requestRepository.findByRequesterId(currentUserId);
     }
 
-    /* комментарий важный ключевой */
+    // скрытие завершенных заявок из истории
     public int clearMyHistory() {
         Long currentUserId;
         try {

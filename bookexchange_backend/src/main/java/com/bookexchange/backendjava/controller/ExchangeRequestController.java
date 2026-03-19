@@ -20,7 +20,7 @@ public class ExchangeRequestController {
         this.exchangeRequestService = exchangeRequestService;
     }
 
-    // создание запроса важный
+    // создание запроса на обмен
     @PostMapping
     public ResponseEntity<?> createExchangeRequest(@RequestBody Map<String, Long> requestBody) {
         Long requestedBookId = requestBody.get("requestedBookId");
@@ -32,12 +32,12 @@ public class ExchangeRequestController {
 
         Optional<ExchangeRequest> savedRequest = exchangeRequestService.createRequest(requestedBookId, offeredBookId);
 
-        // исправленный блок использование
+        // проверка успешного создания
         if (savedRequest.isPresent()) {
-            // успешный путь возвращает
+            // успешный ответ
             return new ResponseEntity<>(savedRequest.get(), HttpStatus.CREATED);
         } else {
-            // путь ошибки возвращает
+            // ошибка валидации или создания
             return new ResponseEntity<>("Failed to create exchange request due to validation (e.g., book not found, owner mismatch, or exchanging with self).", HttpStatus.BAD_REQUEST);
         }
     }
@@ -56,7 +56,7 @@ public class ExchangeRequestController {
         return ResponseEntity.ok(requests);
     }
     
-    // принятие запроса важный
+    // принятие запроса получателем
     @PutMapping("/{id}/accept")
     public ResponseEntity<?> acceptRequest(@PathVariable Long id) {
         if (exchangeRequestService.acceptRequest(id)) {
@@ -65,7 +65,7 @@ public class ExchangeRequestController {
         return new ResponseEntity<>("Failed to accept request or request not found/pending.", HttpStatus.BAD_REQUEST);
     }
 
-    // отклонение запроса важный
+    // отклонение запроса получателем
     @PutMapping("/{id}/reject")
     public ResponseEntity<?> rejectRequest(@PathVariable Long id) {
         if (exchangeRequestService.rejectRequest(id)) {
@@ -83,7 +83,7 @@ public class ExchangeRequestController {
         return new ResponseEntity<>("Failed to cancel request or request not found/pending.", HttpStatus.BAD_REQUEST);
     }
 
-    // очистка истории для
+    // очистка истории завершенных обменов
     @PostMapping("/history/clear")
     public ResponseEntity<?> clearMyHistory() {
         int hidden = exchangeRequestService.clearMyHistory();

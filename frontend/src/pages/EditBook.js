@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { getBookById, updateBook } from '../api/BookApi';
+import { getBookById, updateBook } from '../api/bookApi';
 import { lookupCoverUrlByTitleAuthor } from '../api/coverApi';
 
 const primaryColor = '#a89d70';

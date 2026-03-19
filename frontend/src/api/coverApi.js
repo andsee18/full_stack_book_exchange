@@ -1,4 +1,4 @@
-// простая интеграция важный
+// интеграция с open library
 
 const buildCoverUrlFromDoc = (doc) => {
     const coverId = doc?.cover_i;
@@ -25,11 +25,11 @@ const normalizeQueryText = (value) => {
         .toLowerCase()
         .replace(/ё/g, 'е');
 
-    // комментарий важный ключевой
+    // исправление опечаток
     const fixedTypos = s
         .replace(/филосовск/g, 'философск');
 
-    // комментарий важный ключевой
+    // нормализация текста
     return fixedTypos
         .replace(/["'“”‘’`]/g, ' ')
         .replace(/[^\p{L}\p{N}]+/gu, ' ')
@@ -44,7 +44,7 @@ const scoreDocMatch = (doc, titleNorm, authorNorm) => {
 
     let score = 0;
 
-    // комментарий важный ключевой
+    // базовый вес совпадения идентификаторов
     if (doc?.cover_i || (Array.isArray(doc?.isbn) && doc.isbn.length) || (Array.isArray(doc?.edition_key) && doc.edition_key.length)) {
         score += 3;
     }
@@ -53,7 +53,7 @@ const scoreDocMatch = (doc, titleNorm, authorNorm) => {
         if (docTitle === titleNorm) score += 6;
         else if (docTitle.includes(titleNorm) || titleNorm.includes(docTitle)) score += 4;
         else {
-            // комментарий важный ключевой
+            // поиск совпадений по отдельным словам
             const titleTokens = new Set(titleNorm.split(' ').filter(Boolean));
             const docTitleTokens = new Set(docTitle.split(' ').filter(Boolean));
             let common = 0;
@@ -100,14 +100,14 @@ export const lookupCoverUrlByTitleAuthor = async (title, author) => {
 
     if (t.length < 2 || a.length < 2) return null;
 
-    // комментарий важный ключевой
+    // стратегии поиска
     const queries = [
-        // комментарий важный ключевой
+        // структурированный поиск
         { type: 'structured', params: { title: t, author: a, limit: '5' } },
-        // комментарий важный ключевой
+        // поиск по фразе
         { type: 'q', params: { q: `"${tRaw}" "${aRaw}"`, limit: '5' } },
         { type: 'q', params: { q: `${tRaw} ${aRaw}`, limit: '5' } },
-        // комментарий важный ключевой
+        // поиск только по названию
         { type: 'structured', params: { title: t, limit: '5' } },
         { type: 'q', params: { q: tRaw, limit: '5' } },
     ];
@@ -125,7 +125,7 @@ export const lookupCoverUrlByTitleAuthor = async (title, author) => {
             const cover = buildCoverUrlFromDoc(bestDoc);
             if (cover) return cover;
         } catch {
-            // комментарий важный ключевой
+            // игнорирование ошибок запроса
         }
     }
 

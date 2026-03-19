@@ -20,7 +20,7 @@ public class BookController {
         this.bookService = bookService;
     }
 
-    // создание книги важный
+    // создание книги
     @PostMapping
     public ResponseEntity<?> createBook(@RequestBody Book book) {
         Optional<Book> savedBook = bookService.save(book);
@@ -39,36 +39,36 @@ public class BookController {
         return ResponseEntity.ok(books);
     }
 
-    // получение книги важный
+    // получение книги по id
     @GetMapping("/{id}")
     public ResponseEntity<Book> getBookById(@PathVariable Long id) {
         Optional<Book> book = bookService.findById(id);
         return book.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // обновление книги важный
+    // обновление информации о книге
     @PutMapping("/{id}")
     public ResponseEntity<?> updateBook(@PathVariable Long id, @RequestBody Book updatedBook) {
-        // нет прав если
+        // обновление книги с проверкой прав
         Optional<Book> result = bookService.update(id, updatedBook);
 
         if (result.isPresent()) {
             return new ResponseEntity<>(result.get(), HttpStatus.OK); 
         }
         
-        // книга найдена важный
+        // книга не найдена или нет доступа
         return ResponseEntity.notFound().build(); // 404 Not Found
     }
 
-    // удаление книги важный
+    // удаление книги
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteBook(@PathVariable Long id) {
-        // нет прав если
+        // удаление с проверкой прав
         if (bookService.delete(id)) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT); // 204 No Content
         }
         
-        // книга найдена важный
+        // книга не найдена или нет доступа
         return ResponseEntity.notFound().build(); // 404 Not Found
     }
 }

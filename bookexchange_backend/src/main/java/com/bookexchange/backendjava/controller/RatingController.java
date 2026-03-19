@@ -20,7 +20,7 @@ public class RatingController {
         this.ratingService = ratingService;
     }
 
-    // комментарий важный ключевой
+    // выставление оценки пользователю
     @PostMapping
     public ResponseEntity<?> rate(@RequestBody Map<String, Object> body) {
         Long exchangeRequestId = null;
@@ -48,7 +48,7 @@ public class RatingController {
         return ResponseEntity.ok(Map.of("rating", r.rating(), "ratingCount", r.ratingCount()));
     }
 
-    // комментарий важный ключевой
+    // получение списка оцененных обменов
     @GetMapping("/mine")
     public ResponseEntity<List<Long>> mine() {
         return ResponseEntity.ok(ratingService.getMyRatedExchangeIds());

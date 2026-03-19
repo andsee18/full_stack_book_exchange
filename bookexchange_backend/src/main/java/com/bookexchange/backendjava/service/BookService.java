@@ -148,7 +148,7 @@ public class BookService {
         return Optional.of(existingBook);
     }
 
-    // удалить книгу важный
+    // удаление книги
     @Transactional
     public boolean delete(Long id) {
         Optional<Book> existingBookOpt = bookRepository.findById(id);
@@ -166,17 +166,17 @@ public class BookService {
             throw new PermissionDeniedException("Authentication context error for delete.");
         }
 
-        // критическая проверка важный
+        // проверка прав доступа к удалению
         if (!existingBook.getOwnerId().equals(currentUserId)) {
             System.err.println("Permission denied: User " + currentUserId + " attempted to delete book " + id + " owned by " + existingBook.getOwnerId());
             throw new PermissionDeniedException("You do not have permission to delete this book."); // 403
         }
 
-        // комментарий важный ключевой
+        // отмена всех связанных заявок на обмен
         try {
             exchangeRequestRepository.cancelPendingByBookId(id);
         } catch (Exception e) {
-            // комментарий важный ключевой
+            // логирование ошибки отмены заявок
             throw e;
         }
 

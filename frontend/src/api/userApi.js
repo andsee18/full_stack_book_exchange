@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { refreshAccessToken, clearAccessToken } from './authApi';
 
 const API_URL = 'http://localhost:5000/api/users';
 
@@ -9,16 +10,40 @@ const userApi = axios.create({
     },
 });
 
-// комментарий важный ключевой
+// перехватчик запросов с добавлением токена
 userApi.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('jwtToken');
+        const token = window.__ACCESS_TOKEN || localStorage.getItem('jwtToken');
         if (token) {
             config.headers['Authorization'] = `Bearer ${token}`;
         }
         return config;
     },
     (error) => Promise.reject(error)
+);
+
+// перехватчик ответов для обновления токена при ошибке авторизации
+userApi.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+        const originalRequest = error.config;
+        if (error.response?.status === 401 && !originalRequest._retry) {
+            originalRequest._retry = true;
+            try {
+                const refreshed = await refreshAccessToken();
+                const newToken = refreshed?.accessToken || refreshed;
+                if (newToken) {
+                    window.__ACCESS_TOKEN = newToken;
+                    originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
+                    return userApi(originalRequest);
+                }
+            } catch (refreshErr) {
+                clearAccessToken();
+                // опционально редирект на логин
+            }
+        }
+        return Promise.reject(error);
+    }
 );
 
 export const getUserById = async (id) => {

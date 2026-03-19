@@ -83,26 +83,43 @@ public class AuthController {
         }
         if (tokenValue == null) return ResponseEntity.status(401).body(java.util.Map.of("error", "No refresh token"));
 
-        return refreshTokenService.findByToken(tokenValue).map(rt -> {
-            if (!refreshTokenService.verifyExpiration(rt)) return ResponseEntity.status(401).body(java.util.Map.of("error", "Refresh token expired"));
-            String role = userService.findById(rt.getUserId()).map(u -> u.getRole()).orElse("USER");
-            String newAccess = jwtTokenUtil.generateToken(rt.getUserId(), role);
-            // комментарий важный ключевой
-            ResponseCookie cookie = ResponseCookie.from("refreshToken", rt.getToken())
-                    .httpOnly(true)
-                    .path("/api/auth")
-                    .maxAge(refreshExpirationMs / 1000)
-                    .sameSite("Strict")
-                    .secure(false)
-                    .build();
-            response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-            return ResponseEntity.ok(Map.of(
-                    "accessToken", newAccess,
-                    "tokenType", "Bearer",
-                    "userId", rt.getUserId(),
-                    "role", role
-            ));
-        }).orElseGet(() -> ResponseEntity.status(401).body(java.util.Map.of("error", "Invalid refresh token")));
+        return refreshTokenService.findByToken(tokenValue)
+            .map(rt -> {
+                // 1. Check expiration
+                if (!refreshTokenService.verifyExpiration(rt)) {
+                    // Token expired
+                    return ResponseEntity.status(403).body(java.util.Map.of("error", "Refresh token was expired. Please make a new signin request"));
+                }
+
+                // 2. Refresh Token Rotation
+                // We delete the old refresh token to prevent reuse/theft replay
+                refreshTokenService.deleteById(rt.getId());
+
+                // 3. Find user and create NEW refresh token
+                User user = userService.findById(rt.getUserId()).orElseThrow(() -> new RuntimeException("User not found"));
+                RefreshToken newRt = refreshTokenService.createRefreshToken(user);
+
+                // 4. Generate new Access Token
+                String newAccess = jwtTokenUtil.generateToken(user.getId(), user.getRole());
+
+                // 5. Send new Refresh Token in secure cookie
+                ResponseCookie cookie = ResponseCookie.from("refreshToken", newRt.getToken())
+                        .httpOnly(true)
+                        .path("/api/auth")
+                        .maxAge(refreshExpirationMs / 1000)
+                        .sameSite("Strict")
+                        .secure(false)
+                        .build();
+                response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+
+                return ResponseEntity.ok(Map.of(
+                        "accessToken", newAccess,
+                        "tokenType", "Bearer",
+                        "userId", user.getId(),
+                        "role", user.getRole() != null ? user.getRole() : "USER"
+                ));
+            })
+            .orElseGet(() -> ResponseEntity.status(403).body(java.util.Map.of("error", "Invalid refresh token")));
     }
 
     @PostMapping("/logout")
@@ -112,7 +129,8 @@ public class AuthController {
             for (Cookie c : request.getCookies()) if ("refreshToken".equals(c.getName())) tokenValue = c.getValue();
         }
         if (tokenValue != null) {
-            refreshTokenService.findByToken(tokenValue).ifPresent(rt -> refreshTokenService.deleteByUserId(rt.getUserId()));
+            // точечный выход отзыв токена только текущей сессии
+            refreshTokenService.findByToken(tokenValue).ifPresent(rt -> refreshTokenService.deleteById(rt.getId()));
         }
         ResponseCookie cookie = ResponseCookie.from("refreshToken", "")
                 .httpOnly(true)
@@ -122,6 +140,6 @@ public class AuthController {
                 .secure(false)
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok().body(Map.of("message", "Logout successful"));
     }
 }

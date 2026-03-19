@@ -2,10 +2,10 @@ import axios from 'axios';
 
 import { clearAccessToken, refreshAccessToken } from './authApi';
 
-// устанавливаем базовый важный
+// устанавливаем базовый url
 const API_URL = 'http://localhost:5000/api/books';
 
-// создаем экземпляр важный
+// создаем экземпляр axios
 const bookApi = axios.create({
     baseURL: API_URL,
     headers: {
@@ -13,14 +13,14 @@ const bookApi = axios.create({
     },
 });
 
-// перехватчик запросов важный
+// перехватчик запросов добавление токена
 bookApi.interceptors.request.use(
     (config) => {
-        // получаем токен предполагаем
-        const token = window.__ACCESS_TOKEN || localStorage.getItem('jwtToken'); 
+        // получаем токен из памяти или хранилища
+        const token = window.__ACCESS_TOKEN || localStorage.getItem('jwtToken');
 
         if (token) {
-            // токен существует если
+            // если токен существует добавляем его в заголовок
             config.headers['Authorization'] = `Bearer ${token}`;
         }
         return config;
@@ -30,7 +30,7 @@ bookApi.interceptors.request.use(
     }
 );
 
-// перехватчик ответов важный
+// перехватчик ответов обработка ошибки 401
 bookApi.interceptors.response.use(
     (response) => response,
     async (error) => {

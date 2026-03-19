@@ -31,19 +31,19 @@ public class SecurityBeansConfig implements WebMvcConfigurer {
         this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
     }
 
-    // бин
+    // бин кодировщика паролей
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
     
-    // бин для аутентификации в сервисе 
+    // бин менеджера аутентификации
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
     }
 
-    // конфигурация
+    // конфигурация cors
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
@@ -63,12 +63,12 @@ public class SecurityBeansConfig implements WebMvcConfigurer {
         return source;
     }
 
-    // для с
+    // цепочка фильтров безопасности
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtFilter jwtFilter) throws Exception {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(csrf -> csrf.disable()) // ОТКЛЮЧАЕМ CSRF для REST API (используем JWT)
+            .csrf(csrf -> csrf.disable()) //
             .exceptionHandling(exception -> exception
                 .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                 .accessDeniedHandler((request, response, accessDeniedException) ->

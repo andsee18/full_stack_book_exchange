@@ -27,13 +27,13 @@ export const registerUser = async (userData) => {
     }
 };
 
-//  вход пользователя важный
+// вход пользователя получение токенов
 export const loginUser = async (credentials) => {
     try {
-        // комментарий важный ключевой
+        // отправка запроса на вход с cookie
         const response = await axios.post(`${API_URL_AUTH}/login`, credentials, { withCredentials: true });
         const data = response.data;
-        // комментарий важный ключевой
+        // сохранение access token
         if (data && data.accessToken) {
             setAccessToken(data.accessToken);
         }
@@ -44,7 +44,7 @@ export const loginUser = async (credentials) => {
     }
 };
 
-// обновление через важный
+// обновление access token через refresh token
 export const refreshAccessToken = async () => {
     if (refreshPromise) return refreshPromise;
 
@@ -65,7 +65,7 @@ export const refreshAccessToken = async () => {
     return refreshPromise;
 };
 
-// выход пользователя важный
+// выход пользователя отзыв токена
 export const logout = async () => {
     try {
         const response = await axios.post(`${API_URL_AUTH}/logout`, {}, { withCredentials: true });

@@ -25,6 +25,7 @@ public class JwtTokenUtil {
         return generateToken(userId, null);
     }
 
+    // генерация токена с ролью пользователя
     public String generateToken(Long userId, String role) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + jwtExpirationInMs);
@@ -43,11 +44,13 @@ public class JwtTokenUtil {
                 .compact();
     }
 
+    // получение id пользователя из токена
     public Long getUserIdFromToken(String token) {
         Claims claims = Jwts.parserBuilder().setSigningKey(getSigningKey()).build().parseClaimsJws(token).getBody();
         return Long.parseLong(claims.getSubject());
     }
 
+    // валидация токена
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder().setSigningKey(getSigningKey()).build().parseClaimsJws(token);

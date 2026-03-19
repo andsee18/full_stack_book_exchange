@@ -22,7 +22,7 @@ public class JwtFilter extends OncePerRequestFilter {
     private final JwtTokenUtil jwtTokenUtil;
     private final UserDetailsService userDetailsService; 
 
-    // конструктор важный ключевой
+    // конструктор фильтра аутентификации
     public JwtFilter(JwtTokenUtil jwtTokenUtil, UserDetailsService userDetailsService) {
         this.jwtTokenUtil = jwtTokenUtil;
         this.userDetailsService = userDetailsService;
@@ -47,7 +47,7 @@ public class JwtFilter extends OncePerRequestFilter {
         try {
             userId = jwtTokenUtil.getUserIdFromToken(jwt);
         } catch (Exception ignored) {
-            // если токен битый/просрочен, не ставим аутентификацию; entrypoint вернет 401 на защищенных маршрутах
+            // если токен недействителен аутентификация не устанавливается
         }
 
         var existingAuth = SecurityContextHolder.getContext().getAuthentication();
@@ -62,7 +62,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             } catch (UsernameNotFoundException ignored) {
-                // если пользователя нет, просто не ставим контекст
+                // если пользователь не найден контекст не устанавливается
             }
         }
 

@@ -42,6 +42,12 @@ public class RefreshTokenService {
         return true;
     }
 
+    // удаление по id для ротации или выхода
+    public void deleteById(Long id) {
+        repo.deleteById(id);
+    }
+
+    // удаление всех токенов пользователя
     public void deleteByUserId(Long userId) {
         repo.deleteByUserId(userId);
     }

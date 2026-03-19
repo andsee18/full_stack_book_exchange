@@ -8,7 +8,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // комментарий важный ключевой
+  // инициализация сессии при загрузке приложения
   useEffect(() => {
     let isActive = true;
 
@@ -19,11 +19,11 @@ export function AuthProvider({ children }) {
         return;
       }
 
-      // комментарий важный ключевой
+      // восстановление токена из хранилища
       window.__ACCESS_TOKEN = token;
       if (isActive) setUser({ token, userId: null, role: null });
 
-      // комментарий важный ключевой
+      // попытка обновления сессии через refresh token
       try {
         const refreshed = await refreshAccessToken();
         const newToken = refreshed?.accessToken || refreshed;
@@ -48,7 +48,7 @@ export function AuthProvider({ children }) {
           });
         }
       } catch {
-        // комментарий важный ключевой
+        // ошибка восстановления сессии очистка состояния
         clearAccessToken();
         if (isActive) setUser(null);
       } finally {

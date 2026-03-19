@@ -17,7 +17,7 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
         this.jwtTokenUtil = jwtTokenUtil;
     }
 
-    // метод вызывается этот
+    //
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
                          AuthenticationException authException) throws IOException {

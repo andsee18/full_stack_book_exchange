@@ -4,6 +4,7 @@ import com.bookexchange.backendjava.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
 
 import java.util.Map;
 
@@ -19,7 +20,7 @@ public class AdminController {
     }
 
     @PutMapping("/users/{id}/role")
-    public ResponseEntity<?> setRole(@PathVariable Long id, @RequestBody Map<String, String> body) {
+    public ResponseEntity<?> setRole(@PathVariable Long id, @RequestBody Map<String, String> body, Authentication authentication) {
         String role = body.get("role");
         if (role == null || role.isBlank()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "role is required"));
@@ -28,6 +29,28 @@ public class AdminController {
         String normalized = role.trim().toUpperCase();
         if (!normalized.equals("USER") && !normalized.equals("ADMIN")) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "role must be USER or ADMIN"));
+        }
+
+        // защита от смены собственной роли
+        try {
+            Long currentUserId = Long.parseLong(authentication.getName());
+            if (currentUserId.equals(id)) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Нельзя изменить собственную роль"));
+            }
+        } catch (NumberFormatException e) {
+            // обработка ошибки парсинга id
+        }
+
+        // предотвращение удаления последнего администратора
+        if ("USER".equals(normalized)) {
+            // проверка текущей роли пользователя до обновления
+            var targetUser = userService.findById(id);
+            if (targetUser.isPresent() && "ADMIN".equals(targetUser.get().getRole())) {
+                long adminCount = userService.countAdmins();
+                if (adminCount <= 1) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Нельзя понизить последнего администратора"));
+                }
+            }
         }
 
         boolean ok = userService.setUserRole(id, normalized);

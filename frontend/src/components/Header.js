@@ -126,6 +126,9 @@ export default function Header() {
 				<InteractiveElement to="/">Каталог</InteractiveElement>
 				{isLoggedIn ? (
 					<>
+						{user?.role === 'ADMIN' && (
+							<InteractiveElement to="/admin">Админка</InteractiveElement>
+						)}
 						<InteractiveElement to="/add-book">Добавить книгу</InteractiveElement>
 						<InteractiveElement to="/profile">Профиль</InteractiveElement>
 						<InteractiveElement onClick={handleLogout} isAction={true} title="Выйти из аккаунта">

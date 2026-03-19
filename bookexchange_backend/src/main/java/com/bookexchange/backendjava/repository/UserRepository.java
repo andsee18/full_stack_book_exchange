@@ -126,6 +126,12 @@ public class UserRepository {
         return count != null ? count : 0L;
     }
 
+    public long countAdmins() {
+        final String sql = "SELECT COUNT(*) FROM users WHERE role = 'ADMIN'";
+        Long count = jdbcTemplate.queryForObject(sql, Long.class);
+        return count != null ? count : 0L;
+    }
+
     public boolean updateRole(Long userId, String role) {
         final String sql = "UPDATE users SET role = ? WHERE id = ?";
         String normalized = role != null && !role.isBlank() ? role.trim().toUpperCase() : "USER";

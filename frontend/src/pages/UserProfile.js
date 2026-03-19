@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { getUserById } from '../api/userApi';
-import { getAllBooks } from '../api/BookApi';
+import { getAllBooks } from '../api/bookApi';
 
 const primaryColor = '#a89d70';
 const darkBeigeColor = '#eae7dd';

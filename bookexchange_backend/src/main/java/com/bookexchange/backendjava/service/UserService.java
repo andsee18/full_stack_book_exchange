@@ -72,7 +72,7 @@ public class UserService implements UserDetailsService {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
         // назначаем роль по умолчанию
-        // для учебного проекта делаем первого зарегистрированного пользователя админом
+        // для учебного проекта перворег адм
         try {
             if (userRepository.countUsers() == 0) {
                 user.setRole("ADMIN");
@@ -93,6 +93,10 @@ public class UserService implements UserDetailsService {
 
     public boolean setUserRole(Long userId, String role) {
         return userRepository.updateRole(userId, role);
+    }
+
+    public long countAdmins() {
+        return userRepository.countAdmins();
     }
 
     public Optional<User> findById(Long id) {
@@ -121,7 +125,7 @@ public class UserService implements UserDetailsService {
 
         User existing = existingOpt.get();
 
-        // комментарий важный ключевой
+        // обновление имени пользователя
         if (updatedUser.getUsername() != null && !updatedUser.getUsername().isBlank()) {
             String nextUsername = updatedUser.getUsername().trim();
             if (!nextUsername.equals(existing.getUsername())) {
@@ -133,26 +137,26 @@ public class UserService implements UserDetailsService {
             existing.setUsername(nextUsername);
         }
 
-        // комментарий важный ключевой
+        // обновление email
         if (updatedUser.getEmail() != null) {
             String nextEmail = updatedUser.getEmail().trim();
             existing.setEmail(nextEmail.isBlank() ? null : nextEmail);
         }
 
-        // комментарий важный ключевой
+        // обновление местоположения
         if (updatedUser.getLocation() != null) {
             String nextLocation = updatedUser.getLocation().trim();
             existing.setLocation(nextLocation.isBlank() ? null : nextLocation);
         }
 
-        // комментарий важный ключевой
+        // обновление изображения профиля
         if (updatedUser.getProfileImage() != null) {
             String nextImage = updatedUser.getProfileImage().trim();
             existing.setProfileImage(nextImage.isBlank() ? null : nextImage);
         }
 
-        // комментарий важный ключевой
-        existing.setPassword(existing.getPassword());
+        // сохранение существующего пароля
+
         if (existing.getRating() == null) existing.setRating(0.0);
         if (existing.getRatingCount() == null) existing.setRatingCount(0);
 

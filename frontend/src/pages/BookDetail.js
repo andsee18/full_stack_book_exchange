@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getAllBooks, getBookById } from '../api/bookApi';
@@ -384,7 +383,7 @@ export default function BookDetail() {
                     <div style={sidebarStyle}>
                         <h2 style={{ color: primaryColor }}>Владелец</h2>
                         <Link
-                            to={book?.ownerId != null ? `/users/${book.ownerId}` : '#'}
+                            to={isOwnBook ? '/profile' : (book?.ownerId != null ? `/users/${book.ownerId}` : '#')}
                             style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
                             aria-label="Открыть профиль владельца"
                         >
@@ -694,7 +693,7 @@ const infoItemStyle = {
 const labelStyle = { margin: '0', fontSize: '0.85em', color: primaryColor, fontWeight: '700' };
 const valueStyle = { margin: '5px 0 0 0', fontSize: '1.1em', fontWeight: 'bold' };
 
-/* стили для важный */
+/* стили важный для */
 const sidebarStyle = {
     padding: '30px', 
     backgroundColor: darkBeigeColor, 

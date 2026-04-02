@@ -585,18 +585,21 @@ export default function Profile() {
             setLoadingBooks(true);
 
             try {
-                const [u, allBooks] = await Promise.all([
+                const [u, booksResponse] = await Promise.all([
                     getUserById(currentUserId),
-                    getAllBooks(),
+                    getAllBooks({ size: 1000 }), // загружаем побольше для профиля
                 ]);
 
                 if (!isActive) return;
 
                 setCurrentUser(u);
-                setBooksCatalog(Array.isArray(allBooks) ? allBooks : []);
-                const mine = Array.isArray(allBooks)
-                    ? allBooks.filter((b) => Number(b.ownerId) === Number(currentUserId))
-                    : [];
+
+                // извлекаем массив из объекта ответа
+                const allBooks = Array.isArray(booksResponse?.books) ? booksResponse.books : [];
+                setBooksCatalog(allBooks);
+
+                const mine = allBooks.filter((b) => Number(b.ownerId) === Number(currentUserId));
+
                 setMyBooks(mine);
             } catch (e) {
                 if (!isActive) return;
@@ -768,11 +771,10 @@ export default function Profile() {
     };
 
     const reloadAllBooks = async () => {
-        const allBooks = await getAllBooks();
-        setBooksCatalog(Array.isArray(allBooks) ? allBooks : []);
-        const mine = Array.isArray(allBooks)
-            ? allBooks.filter((b) => Number(b.ownerId) === Number(currentUserId))
-            : [];
+        const booksResponse = await getAllBooks({ size: 1000 });
+        const allBooks = Array.isArray(booksResponse?.books) ? booksResponse.books : [];
+        setBooksCatalog(allBooks);
+        const mine = allBooks.filter((b) => Number(b.ownerId) === Number(currentUserId));
         setMyBooks(mine);
     };
 

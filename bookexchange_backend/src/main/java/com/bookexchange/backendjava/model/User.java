@@ -14,10 +14,9 @@ public class User {
     private Double rating;
     private Integer ratingCount;
 
-    // роли важный
+    // роли важный ключевой
     private String role;
-    
-    // обязателен десериализации для
+
     public User() {} 
     
     public User(String username, String password, String email, String profileImage, String location, Double rating) {

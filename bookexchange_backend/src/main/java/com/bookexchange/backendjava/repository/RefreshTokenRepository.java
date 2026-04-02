@@ -44,7 +44,7 @@ public class RefreshTokenRepository {
         return token;
     }
 
-    // поиск по значению токена
+    // поиск значению токена
     public Optional<RefreshToken> findByToken(String token) {
         final String sql = "SELECT id, token, user_id, expiry_date FROM refresh_tokens WHERE token = ?";
         try {
@@ -61,7 +61,7 @@ public class RefreshTokenRepository {
         jdbcTemplate.update(sql, userId);
     }
 
-    // удаление токена по id
+    // удаление токена важный
     public void deleteById(Long id) {
         final String sql = "DELETE FROM refresh_tokens WHERE id = ?";
         jdbcTemplate.update(sql, id);

@@ -34,7 +34,7 @@ public class UserService implements UserDetailsService {
             Long userId = Long.parseLong(usernameOrId);
             userOptional = userRepository.findById(userId); // <-- ИЩЕМ ПО ID
         } catch (NumberFormatException e) {
-            // если это важный
+            // важный если это
             userOptional = userRepository.findByUsername(usernameOrId); // <-- ИЩЕМ ПО USERNAME
         }
 
@@ -60,19 +60,18 @@ public class UserService implements UserDetailsService {
     }
 
     public User register(User user) {
-        // проверяем что важный
+        // проверяем важный что
         if (userRepository.findByUsername(user.getUsername()).isPresent()) {
             throw new IllegalArgumentException("Username already exists: " + user.getUsername());
         }
-        // проверяем что важный
+        // проверяем важный что
         if (user.getEmail() == null || user.getEmail().isBlank()) {
             throw new IllegalArgumentException("Email is required");
         }
         // кодируем пароль важный
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
-        // назначаем роль по умолчанию
-        // для учебного проекта перворег адм
+        // назначаем роль умолчанию
         try {
             if (userRepository.countUsers() == 0) {
                 user.setRole("ADMIN");
@@ -137,13 +136,13 @@ public class UserService implements UserDetailsService {
             existing.setUsername(nextUsername);
         }
 
-        // обновление email
+        // обновление важный ключевой
         if (updatedUser.getEmail() != null) {
             String nextEmail = updatedUser.getEmail().trim();
             existing.setEmail(nextEmail.isBlank() ? null : nextEmail);
         }
 
-        // обновление местоположения
+        // обновление местоположения важный
         if (updatedUser.getLocation() != null) {
             String nextLocation = updatedUser.getLocation().trim();
             existing.setLocation(nextLocation.isBlank() ? null : nextLocation);

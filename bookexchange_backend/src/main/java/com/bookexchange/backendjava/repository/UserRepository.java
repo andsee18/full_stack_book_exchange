@@ -44,7 +44,6 @@ public class UserRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    // комментарий важный ключевой
     public User save(User user) {
         final String sql = "INSERT INTO users (username, password, email, profile_image, location, rating, rating_count, role) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -73,7 +72,7 @@ public class UserRepository {
         return user;
     }
 
-    // комментарий важный ключевой
+    // поиск айди важный
     public Optional<User> findById(Long id) {
         final String sql = "SELECT id, username, password, email, profile_image, location, rating, rating_count, role FROM users WHERE id = ?";
         try {
@@ -95,13 +94,11 @@ public class UserRepository {
         }
     }
 
-    // комментарий важный ключевой
     public List<User> findAll() {
         final String sql = "SELECT id, username, password, email, profile_image, location, rating, rating_count, role FROM users";
         return jdbcTemplate.query(sql, userRowMapper);
     }
 
-    // комментарий важный ключевой
     public int update(User user) {
         final String sql = "UPDATE users SET username = ?, password = ?, email = ?, profile_image = ?, location = ?, rating = ?, rating_count = ?, role = ? WHERE id = ?";
 
@@ -138,7 +135,6 @@ public class UserRepository {
         return jdbcTemplate.update(sql, normalized, userId) > 0;
     }
 
-    // комментарий важный ключевой
     public int delete(Long id) {
         final String sql = "DELETE FROM users WHERE id = ?";
         return jdbcTemplate.update(sql, id);

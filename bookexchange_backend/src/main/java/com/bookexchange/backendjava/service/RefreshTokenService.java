@@ -42,7 +42,7 @@ public class RefreshTokenService {
         return true;
     }
 
-    // удаление по id для ротации или выхода
+    // удаление ротации выхода
     public void deleteById(Long id) {
         repo.deleteById(id);
     }

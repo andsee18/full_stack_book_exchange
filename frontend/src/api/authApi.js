@@ -30,10 +30,10 @@ export const registerUser = async (userData) => {
 // вход пользователя получение токенов
 export const loginUser = async (credentials) => {
     try {
-        // отправка запроса на вход с cookie
+        // отправка запроса вход
         const response = await axios.post(`${API_URL_AUTH}/login`, credentials, { withCredentials: true });
         const data = response.data;
-        // сохранение access token
+        // сохранение важный ключевой
         if (data && data.accessToken) {
             setAccessToken(data.accessToken);
         }
@@ -44,7 +44,7 @@ export const loginUser = async (credentials) => {
     }
 };
 
-// обновление access token через refresh token
+// обновление через важный
 export const refreshAccessToken = async () => {
     if (refreshPromise) return refreshPromise;
 

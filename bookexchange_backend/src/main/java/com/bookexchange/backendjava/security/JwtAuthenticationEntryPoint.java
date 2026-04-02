@@ -17,13 +17,12 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
         this.jwtTokenUtil = jwtTokenUtil;
     }
 
-    //
+    //важный ключевой момент
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
                          AuthenticationException authException) throws IOException {
 
-        // если токен передан и он валиден, но Spring все равно пришёл в EntryPoint,
-        // значит это, скорее всего, "authenticated but not authorized" => 403.
+        // токен передан валиден все
         String authorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             String jwt = authorizationHeader.substring("Bearer ".length());

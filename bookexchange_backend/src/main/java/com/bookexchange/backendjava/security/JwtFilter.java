@@ -22,7 +22,7 @@ public class JwtFilter extends OncePerRequestFilter {
     private final JwtTokenUtil jwtTokenUtil;
     private final UserDetailsService userDetailsService; 
 
-    // конструктор фильтра аутентификации
+    // конструктор
     public JwtFilter(JwtTokenUtil jwtTokenUtil, UserDetailsService userDetailsService) {
         this.jwtTokenUtil = jwtTokenUtil;
         this.userDetailsService = userDetailsService;
@@ -47,22 +47,23 @@ public class JwtFilter extends OncePerRequestFilter {
         try {
             userId = jwtTokenUtil.getUserIdFromToken(jwt);
         } catch (Exception ignored) {
-            // если токен недействителен аутентификация не устанавливается
+            // токен невалиден
         }
 
-        var existingAuth = SecurityContextHolder.getContext().getAuthentication();
-        if (userId != null && (existingAuth == null || existingAuth instanceof AnonymousAuthenticationToken)) {
+        if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
-                UserDetails userDetails = this.userDetailsService.loadUserByUsername(String.valueOf(userId));
+                // поиск данных пользователя
+                UserDetails userDetails = userDetailsService.loadUserByUsername(String.valueOf(userId));
 
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        String.valueOf(userId),
-                        null,
-                        userDetails.getAuthorities());
+                if (jwtTokenUtil.validateToken(jwt)) {
+                    // установка аутентификации
+                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities());
 
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
             } catch (UsernameNotFoundException ignored) {
-                // если пользователь не найден контекст не устанавливается
+                // пользователь не найден
             }
         }
 

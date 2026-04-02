@@ -1,6 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { createBook } from '../api/bookApi'; // импорт функции для отправки книги
-import { lookupCoverUrlByTitleAuthor } from '../api/coverApi';
 
 // палитра важный ключевой
 const primaryColor = '#a89d70';   
@@ -35,14 +34,12 @@ export default function AddBook() {
         genre: GENRES[0],
         description: '',
         condition: CONDITIONS[0],
-        coverUrl: '',
-        status: 'available' // статус по умолчанию
+        status: 'available'
     });
+    const [coverFile, setCoverFile] = useState(null);
+    const [coverPreview, setCoverPreview] = useState('');
     const [message, setMessage] = useState('');
     const [isError, setIsError] = useState(false);
-    const [coverTouched, setCoverTouched] = useState(false);
-    const [coverLookupStatus, setCoverLookupStatus] = useState('');
-    const lookupTimerRef = useRef(null);
 
     // обработчик изменений важный
     const handleChange = (e) => {
@@ -51,77 +48,19 @@ export default function AddBook() {
             ...prev,
             [name]: value
         }));
-
-        if (name === 'coverUrl') {
-            setCoverTouched(true);
-        }
     };
 
     const handleCoverFileChange = (e) => {
         const file = e.target.files && e.target.files[0];
         if (!file) return;
 
+        setCoverFile(file);
         const reader = new FileReader();
         reader.onload = () => {
-            setBookData(prev => ({
-                ...prev,
-                coverUrl: String(reader.result || '')
-            }));
-            setCoverTouched(true);
+            setCoverPreview(String(reader.result || ''));
         };
         reader.readAsDataURL(file);
     };
-
-    const tryAutoFillCover = async ({ force } = { force: false }) => {
-        const title = (bookData.title || '').trim();
-        const author = (bookData.author || '').trim();
-
-        if (title.length < 2 || author.length < 2) {
-            if (force) setCoverLookupStatus('');
-            return;
-        }
-
-        if (!force && coverTouched) return;
-
-        setCoverLookupStatus('Ищу обложку...');
-        const url = await lookupCoverUrlByTitleAuthor(title, author);
-        if (url) {
-            setBookData(prev => ({
-                ...prev,
-                coverUrl: url
-            }));
-            if (!force) setCoverTouched(false);
-            setCoverLookupStatus('Обложка найдена и подставлена автоматически.');
-        } else {
-            setCoverLookupStatus('Обложку не удалось найти автоматически.');
-        }
-    };
-
-    // авто подбора обложки
-    useEffect(() => {
-        if (lookupTimerRef.current) {
-            clearTimeout(lookupTimerRef.current);
-        }
-
-        const title = (bookData.title || '').trim();
-        const author = (bookData.author || '').trim();
-
-        if (title.length < 2 || author.length < 2) {
-            setCoverLookupStatus('');
-            return;
-        }
-
-        if (coverTouched) return;
-
-        lookupTimerRef.current = setTimeout(() => {
-            tryAutoFillCover({ force: false });
-        }, 650);
-
-        return () => {
-            if (lookupTimerRef.current) clearTimeout(lookupTimerRef.current);
-        };
-        // комментарий важный ключевой
-    }, [bookData.title, bookData.author, coverTouched]);
 
     // обработчик отправки формы
     const handleSubmit = async (e) => {
@@ -129,32 +68,35 @@ export default function AddBook() {
         setMessage('');
         setIsError(false);
 
-
-
         try {
-            // отправка данных важный
-            const newBook = await createBook(bookData); 
-            
-            setMessage(`книга "${newBook.title}" успешно добавлена! id: ${newBook.id}`);
-            
-            // очистка формы после
+            const formData = new FormData();
+            // добавляем объект книги типом
+            formData.append('book', new Blob([JSON.stringify(bookData)], { type: 'application/json' }));
+
+            if (coverFile) {
+                formData.append('cover', coverFile);
+            }
+
+            const newBook = await createBook(formData);
+
+            setMessage(`книга "${newBook.title}" успешно добавлена!`);
+
             setBookData({
                 title: '',
                 author: '',
                 genre: GENRES[0],
                 description: '',
                 condition: CONDITIONS[0],
-                coverUrl: '',
                 status: 'available'
             });
-            setCoverTouched(false);
-            setCoverLookupStatus('');
+            setCoverFile(null);
+            setCoverPreview('');
 
         } catch (error) {
-            // обработка ошибки например
-            let errorMessage = 'ошибка при добавлении книги. проверьте консоль.';
-            if (error.response && error.response.status === 400) {
-                errorMessage = 'ошибка: пользователь с таким id не найден. проверьте owner id.';
+            let errorMessage = 'ошибка при добавлении книги.';
+            if (error.response?.data) {
+                if (typeof error.response.data === 'string') errorMessage = error.response.data;
+                else if (error.response.data.message) errorMessage = error.response.data.message;
             }
             setMessage(errorMessage);
             setIsError(true);
@@ -198,51 +140,19 @@ export default function AddBook() {
 
                     {/* фото/обложка */}
                     <div style={{ textAlign: 'left' }}>
-                        <label style={labelStyle}>Фото / обложка (URL)</label>
+                        <label style={labelStyle}>обложка книги:</label>
                         <input
-                            type="url"
-                            name="coverUrl"
-                            placeholder="вставьте ссылку на картинку (необязательно)"
-                            value={bookData.coverUrl}
-                            onChange={handleChange}
-                            style={inputStyle}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleCoverFileChange}
+                            style={fileInputStyle}
                         />
-                        <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 10 }}>
-                            <label style={fileLabelStyle}>
-                                Загрузить фото
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={handleCoverFileChange}
-                                    style={{ display: 'none' }}
-                                />
-                            </label>
-                            <button
-                                type="button"
-                                onClick={() => tryAutoFillCover({ force: true })}
-                                style={secondaryButtonStyle}
-                            >
-                                Подобрать автоматически
-                            </button>
-                        </div>
-                        {coverLookupStatus ? (
-                            <div style={{ marginTop: 8, color: '#666', fontSize: '0.9em' }}>
-                                {coverLookupStatus}
+
+                        {coverPreview && (
+                            <div style={previewContainerStyle}>
+                                <img src={coverPreview} alt="Предпросмотр" style={previewImageStyle} />
                             </div>
-                        ) : null}
-                        {bookData.coverUrl ? (
-                            <div style={{ marginTop: 12 }}>
-                                <div style={{ marginBottom: 8, color: '#666', fontSize: '0.9em' }}>Предпросмотр:</div>
-                                <img
-                                    src={bookData.coverUrl}
-                                    alt="Обложка"
-                                    style={coverPreviewStyle}
-                                    onError={(e) => {
-                                        e.currentTarget.style.display = 'none';
-                                    }}
-                                />
-                            </div>
-                        ) : null}
+                        )}
                     </div>
 
                     {/* поле: жанр (select) */}
@@ -343,36 +253,24 @@ const labelStyle = {
     color: '#666',
 };
 
-const fileLabelStyle = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '10px 14px',
-    borderRadius: 6,
-    border: `1px solid ${primaryColor}`,
-    color: primaryColor,
-    background: 'white',
-    cursor: 'pointer',
-    fontWeight: 'bold',
-};
-
-const secondaryButtonStyle = {
-    padding: '10px 14px',
-    borderRadius: 6,
-    border: `1px solid ${primaryColor}`,
-    color: primaryColor,
-    background: 'white',
-    cursor: 'pointer',
-    fontWeight: 'bold',
-};
-
-const coverPreviewStyle = {
+const fileInputStyle = {
+    marginBottom: '15px',
     width: '100%',
-    maxHeight: 260,
-    objectFit: 'cover',
-    borderRadius: 8,
-    border: '1px solid rgba(0,0,0,0.08)',
 };
+
+const previewContainerStyle = {
+    marginTop: '10px',
+    marginBottom: '15px',
+    textAlign: 'center'
+};
+
+const previewImageStyle = {
+    maxWidth: '150px',
+    maxHeight: '200px',
+    borderRadius: '4px',
+    boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+};
+
 
 const buttonStyle = {
     backgroundColor: primaryColor,

@@ -1,7 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { getBookById, updateBook } from '../api/bookApi';
-import { lookupCoverUrlByTitleAuthor } from '../api/coverApi';
 
 const primaryColor = '#a89d70';
 const darkBeigeColor = '#eae7dd';
@@ -42,13 +41,11 @@ export default function EditBook() {
         status: 'available'
     });
 
+    const [selectedFile, setSelectedFile] = useState(null);
+
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState('');
     const [isError, setIsError] = useState(false);
-
-    const [coverTouched, setCoverTouched] = useState(false);
-    const [coverLookupStatus, setCoverLookupStatus] = useState('');
-    const lookupTimerRef = useRef(null);
 
     useEffect(() => {
         let isActive = true;
@@ -71,7 +68,6 @@ export default function EditBook() {
                     coverUrl: b?.coverUrl || '',
                     status: b?.status || 'available'
                 });
-                setCoverTouched(false);
             } catch (e) {
                 if (!isActive) return;
                 setMessage('Не удалось загрузить данные книги.');
@@ -90,12 +86,13 @@ export default function EditBook() {
     const handleChange = (e) => {
         const { name, value } = e.target;
         setBookData(prev => ({ ...prev, [name]: value }));
-        if (name === 'coverUrl') setCoverTouched(true);
     };
 
     const handleCoverFileChange = (e) => {
         const file = e.target.files && e.target.files[0];
         if (!file) return;
+
+        setSelectedFile(file);
 
         const reader = new FileReader();
         reader.onload = () => {
@@ -103,53 +100,9 @@ export default function EditBook() {
                 ...prev,
                 coverUrl: String(reader.result || '')
             }));
-            setCoverTouched(true);
         };
         reader.readAsDataURL(file);
     };
-
-    const tryAutoFillCover = async ({ force } = { force: false }) => {
-        const title = (bookData.title || '').trim();
-        const author = (bookData.author || '').trim();
-
-        if (title.length < 2 || author.length < 2) {
-            if (force) setCoverLookupStatus('');
-            return;
-        }
-
-        if (!force && coverTouched) return;
-
-        setCoverLookupStatus('Ищу обложку...');
-        const url = await lookupCoverUrlByTitleAuthor(title, author);
-        if (url) {
-            setBookData(prev => ({ ...prev, coverUrl: url }));
-            if (!force) setCoverTouched(false);
-            setCoverLookupStatus('Обложка найдена и подставлена автоматически.');
-        } else {
-            setCoverLookupStatus('Обложку не удалось найти автоматически.');
-        }
-    };
-
-    useEffect(() => {
-        if (lookupTimerRef.current) clearTimeout(lookupTimerRef.current);
-
-        const title = (bookData.title || '').trim();
-        const author = (bookData.author || '').trim();
-        if (title.length < 2 || author.length < 2) {
-            setCoverLookupStatus('');
-            return;
-        }
-        if (coverTouched) return;
-
-        lookupTimerRef.current = setTimeout(() => {
-            tryAutoFillCover({ force: false });
-        }, 650);
-
-        return () => {
-            if (lookupTimerRef.current) clearTimeout(lookupTimerRef.current);
-        };
-        // комментарий важный ключевой
-    }, [bookData.title, bookData.author, coverTouched]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -157,7 +110,26 @@ export default function EditBook() {
         setIsError(false);
 
         try {
-            const updated = await updateBook(id, bookData);
+            const formData = new FormData();
+
+            // создаем объект книги без лишних полей для бэкенда
+            const bookToSend = {
+                title: bookData.title,
+                author: bookData.author,
+                genre: bookData.genre,
+                description: bookData.description,
+                condition: bookData.condition,
+                status: bookData.status,
+                coverUrl: bookData.coverUrl // сохраняем старый урл если файл не выбран
+            };
+
+            formData.append('book', new Blob([JSON.stringify(bookToSend)], { type: 'application/json' }));
+
+            if (selectedFile) {
+                formData.append('cover', selectedFile);
+            }
+
+            const updated = await updateBook(id, formData);
             setMessage(`Книга "${updated.title}" обновлена.`);
             setIsError(false);
             setTimeout(() => navigate(`/books/${id}`), 400);
@@ -252,17 +224,7 @@ export default function EditBook() {
                                     style={{ display: 'none' }}
                                 />
                             </label>
-                            <button
-                                type="button"
-                                onClick={() => tryAutoFillCover({ force: true })}
-                                style={secondaryButtonStyle}
-                            >
-                                Подобрать автоматически
-                            </button>
                         </div>
-                        {coverLookupStatus ? (
-                            <div style={{ marginTop: 8, color: '#666', fontSize: '0.9em' }}>{coverLookupStatus}</div>
-                        ) : null}
                         {bookData.coverUrl ? (
                             <div style={{ marginTop: 12 }}>
                                 <div style={{ marginBottom: 8, color: '#666', fontSize: '0.9em' }}>Предпросмотр:</div>
@@ -422,15 +384,6 @@ const fileLabelStyle = {
     fontWeight: 'bold',
 };
 
-const secondaryButtonStyle = {
-    padding: '10px 14px',
-    borderRadius: 6,
-    border: `1px solid ${primaryColor}`,
-    color: primaryColor,
-    background: 'white',
-    cursor: 'pointer',
-    fontWeight: 'bold',
-};
 
 const coverPreviewStyle = {
     width: '100%',

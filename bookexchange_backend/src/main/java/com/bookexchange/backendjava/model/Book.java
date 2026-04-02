@@ -1,10 +1,22 @@
 package com.bookexchange.backendjava.model;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 public class Book {
     private Long id;
+
+    @NotBlank(message = "название обязательно")
+    @Size(max = 255, message = "название слишком длинное")
     private String title;
+
+    @NotBlank(message = "автор обязателен")
+    @Size(max = 255, message = "автор слишком длинный")
     private String author;
+
     private String genre; // жанр
+
+    @Size(max = 1000, message = "описание слишком длинное")
     private String description; // описание книги
     private String condition; // состояние
     private String coverUrl; // ссылка/данные обложки (URL или data URL)
@@ -26,7 +38,7 @@ public class Book {
         this.status = status;
     }
 
-    // геттеры сеттеры важный
+    // геттеры сеттеры
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getTitle() { return title; }
@@ -34,7 +46,6 @@ public class Book {
     public String getAuthor() { return author; }
     public void setAuthor(String author) { this.author = author; }
     
-    // геттеры сеттеры важный
     public String getGenre() { return genre; }
     public void setGenre(String genre) { this.genre = genre; }
     public String getDescription() { return description; }
@@ -45,8 +56,6 @@ public class Book {
     public void setCoverUrl(String coverUrl) { this.coverUrl = coverUrl; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
-    
-    // геттер сеттер важный
     public Long getOwnerId() { return ownerId; }
     public void setOwnerId(Long ownerId) { this.ownerId = ownerId; }
 }

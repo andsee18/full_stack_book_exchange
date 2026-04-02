@@ -34,7 +34,7 @@ const AdminPanel = () => {
 
     const handleRoleChange = async (userId, newRole) => {
       try {
-          // Extra safety check in frontend
+          // важный ключевой момент
           if (userId === user.userId) {
               setError("Нельзя изменить роль самому себе.");
               return;
@@ -53,7 +53,7 @@ const AdminPanel = () => {
 
     if (isLoading) return <div style={{ padding: 40, textAlign: 'center' }}>Загрузка...</div>;
 
-    // Защита: только админ может видеть эту страницу
+    // защита только админ может
     if (!user || user.role !== 'ADMIN') {
         return <Navigate to="/" replace />;
     }

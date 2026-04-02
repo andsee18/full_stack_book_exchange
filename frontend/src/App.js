@@ -16,7 +16,7 @@ import AddBook from './pages/AddBook';
 import UserProfile from './pages/UserProfile';
 import EditBook from './pages/EditBook';
 import Settings from './pages/Settings';
-import AdminPanel from './pages/AdminPanel'; // Import AdminPanel
+import AdminPanel from './pages/AdminPanel'; // импорт панели
 
 import RequireAuth from './components/RequireAuth';
 import RequireRole from './components/RequireRole'; // Import RequireRole

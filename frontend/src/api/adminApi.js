@@ -45,13 +45,13 @@ adminApi.interceptors.response.use(
 );
 
 export const getAllUsers = async () => {
-    // GET /api/users available for ADMIN
+    // важный ключевой момент
     const response = await adminApi.get('/users');
     return response.data;
 };
 
 export const setUserRole = async (userId, role) => {
-    // PUT /api/admin/users/{id}/role
+    // важный ключевой момент
     const response = await adminApi.put(`/admin/users/${userId}/role`, { role });
     return response.data;
 };

@@ -20,7 +20,7 @@ public class ExchangeRequestController {
         this.exchangeRequestService = exchangeRequestService;
     }
 
-    // создание запроса на обмен
+    // создание запроса
     @PostMapping
     public ResponseEntity<?> createExchangeRequest(@RequestBody Map<String, Long> requestBody) {
         Long requestedBookId = requestBody.get("requestedBookId");
@@ -32,51 +32,51 @@ public class ExchangeRequestController {
 
         Optional<ExchangeRequest> savedRequest = exchangeRequestService.createRequest(requestedBookId, offeredBookId);
 
-        // проверка успешного создания
+        // проверка создания
         if (savedRequest.isPresent()) {
-            // успешный ответ
+            // запрос создан
             return new ResponseEntity<>(savedRequest.get(), HttpStatus.CREATED);
         } else {
-            // ошибка валидации или создания
+            // ошибка валидации
             return new ResponseEntity<>("Failed to create exchange request due to validation (e.g., book not found, owner mismatch, or exchanging with self).", HttpStatus.BAD_REQUEST);
         }
     }
     
-    // получение входящих запросов
+    // входящие запросы
     @GetMapping("/incoming")
     public ResponseEntity<List<ExchangeRequest>> getIncomingRequests() {
         List<ExchangeRequest> requests = exchangeRequestService.getIncomingRequests();
         return ResponseEntity.ok(requests);
     }
     
-    // получение исходящих запросов
+    // исходящие запросы
     @GetMapping("/outgoing")
     public ResponseEntity<List<ExchangeRequest>> getOutgoingRequests() {
         List<ExchangeRequest> requests = exchangeRequestService.getOutgoingRequests();
         return ResponseEntity.ok(requests);
     }
     
-    // принятие запроса получателем
-    @PutMapping("/{id}/accept")
-    public ResponseEntity<?> acceptRequest(@PathVariable Long id) {
+    // принять запрос
+    @PostMapping("/{id}/accept")
+    public ResponseEntity<?> acceptExchangeRequest(@PathVariable Long id) {
         if (exchangeRequestService.acceptRequest(id)) {
             return new ResponseEntity<>("Exchange request accepted and books swapped.", HttpStatus.OK);
         }
         return new ResponseEntity<>("Failed to accept request or request not found/pending.", HttpStatus.BAD_REQUEST);
     }
 
-    // отклонение запроса получателем
-    @PutMapping("/{id}/reject")
-    public ResponseEntity<?> rejectRequest(@PathVariable Long id) {
+    // отклонить запрос
+    @PostMapping("/{id}/reject")
+    public ResponseEntity<?> rejectExchangeRequest(@PathVariable Long id) {
         if (exchangeRequestService.rejectRequest(id)) {
             return new ResponseEntity<>("Exchange request rejected.", HttpStatus.OK);
         }
         return new ResponseEntity<>("Failed to reject request or request not found/pending.", HttpStatus.BAD_REQUEST);
     }
 
-    // отмена запроса инициатором
-    @PutMapping("/{id}/cancel")
-    public ResponseEntity<?> cancelRequest(@PathVariable Long id) {
+    // отменить запрос
+    @PostMapping("/{id}/cancel")
+    public ResponseEntity<?> cancelExchangeRequest(@PathVariable Long id) {
         if (exchangeRequestService.cancelRequest(id)) {
             return new ResponseEntity<>("Exchange request cancelled.", HttpStatus.OK);
         }

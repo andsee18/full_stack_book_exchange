@@ -1,23 +1,22 @@
-import React, { useEffect, useMemo, useState } from 'react'; // добавлено useEffect
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState, useCallback } from 'react'; // добавлено useEffect
+import { Link, useSearchParams } from 'react-router-dom';
 import { getAllBooks } from '../api/bookApi';
 import { useAuth } from '../context/AuthContext';
 import { getUserIdFromJwt } from '../utils/jwt';
 import {
     isFavoriteBook,
-    subscribeFavoritesChanged,
     toggleFavoriteBook,
 } from '../utils/favoritesStorage';
 
+const primaryColor = '#a89d70';       // основной цвет
+const hoverColor = '#948a65';         // цвет при наведении
+const cardBackground = '#eae7dd';     // фон карточки
+const textColor = '#3c3838';          // цвет текста
 
+const GENRE_OPTIONS = ['Фантастика', 'Классика', 'Детектив', 'Роман', 'Фэнтези', 'Приключения', 'Другое'];
+const CONDITION_OPTIONS = ['Новое', 'Очень хорошее', 'Хорошее', 'Удовлетворительное', 'Плохое'];
 
-
-const primaryColor = '#a89d70';       // основной бежевый акцент
-const hoverColor = '#948a65';         // бежевый акцент для наведения
-const cardBackground = '#eae7dd';     // фон карточек
-const textColor = '#3c3838';          // основной текст
-
-const BookCard = ({ book, isLoggedIn, currentUserId, favoritesTick }) => {
+const BookCard = ({ book, isLoggedIn, currentUserId }) => {
     const [isHovered, setIsHovered] = useState(false);
     const [isLinkHovered, setIsLinkHovered] = useState(false);
 
@@ -26,16 +25,15 @@ const BookCard = ({ book, isLoggedIn, currentUserId, favoritesTick }) => {
     const handleToggleFavorite = () => {
         if (!isLoggedIn) return;
         toggleFavoriteBook(currentUserId, book?.id);
-        // комментарий важный ключевой
+        // переключение избранного
     };
 
-    return (
-        <div 
-            style={{...cardStyle, transform: isHovered ? 'translateY(-5px)' : 'translateY(0)', boxShadow: isHovered ? '0 10px 20px rgba(0, 0, 0, 0.15)' : '0 5px 15px rgba(0, 0, 0, 0.08)'}}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-        >
-            
+    return (
+        <div
+            style={{...cardStyle, transform: isHovered ? 'translateY(-5px)' : 'translateY(0)', boxShadow: isHovered ? '0 10px 20px rgba(0, 0, 0, 0.15)' : '0 5px 15px rgba(0, 0, 0, 0.08)'}}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+        >
             <div style={imageWrapperStyle}>
                 <div style={bookCoverPlaceholderStyle} aria-hidden="true">нет обложки</div>
                 {book.coverUrl ? (
@@ -49,131 +47,136 @@ const BookCard = ({ book, isLoggedIn, currentUserId, favoritesTick }) => {
                     />
                 ) : null}
             </div>
-            
-            <h3 style={titleStyle}>{book.title}</h3>
-            <p style={authorStyle}>{book.author}</p>
-            <p style={statusStyle}>статус: <strong>{book.status}</strong></p>
-            
-            <Link 
-                to={`/books/${book.id}`} 
-                style={{...linkStyle, color: isLinkHovered ? hoverColor : primaryColor}}
-                onMouseEnter={() => setIsLinkHovered(true)}
-                onMouseLeave={() => setIsLinkHovered(false)}
-            >
-                подробнее &rarr;
-            </Link>
 
-            {/* Избранное показываем только если пользователь вошёл */}
+            <h3 style={titleStyle}>{book.title}</h3>
+            <p style={authorStyle}>{book.author}</p>
+            <p style={statusStyle}>статус: <strong>{book.status}</strong></p>
+
+            <Link
+                to={`/books/${book.id}`}
+                style={{...linkStyle, color: isLinkHovered ? hoverColor : primaryColor}}
+                onMouseEnter={() => setIsLinkHovered(true)}
+                onMouseLeave={() => setIsLinkHovered(false)}
+            >
+                подробнее &rarr;
+            </Link>
+
+            {/* кнопка избранного только для авторизованных */}
             {isLoggedIn ? (
-                <button
-                    type="button"
-                    style={favoriteButtonStyle}
-                    onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleToggleFavorite();
-                    }}
-                    aria-label={isFav ? 'Убрать из избранного' : 'Добавить в избранное'}
-                    title={isFav ? 'Убрать из избранного' : 'Добавить в избранное'}
-                >
-                    <span
-                        style={{
-                            ...favoriteIconStyle,
-                            color: isFav ? 'red' : primaryColor,
-                        }}
-                    >
-                        {isFav ? '♥' : '♡'}
-                    </span>
-                </button>
-            ) : null}
+                <button
+                    type="button"
+                    style={favoriteButtonStyle}
+                    onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleToggleFavorite();
+                    }}
+                    aria-label={isFav ? 'Убрать из избранного' : 'Добавить в избранное'}
+                    title={isFav ? 'Убрать из избранного' : 'Добавить в избранное'}
+                >
+                    <span
+                        style={{
+                            ...favoriteIconStyle,
+                            color: isFav ? 'red' : primaryColor,
+                        }}
+                    >
+                        {isFav ? '♥' : '♡'}
+                    </span>
+                </button>
+            ) : null}
         </div>
     );
 };
 
 // основной компонент каталога
 export default function Catalog({ isFavorites = false }) {
+    const { isLoggedIn } = useAuth();
+    const currentUserId = getUserIdFromJwt();
+
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    // параметры фильтрации из url
+    const query = searchParams.get('query') || '';
+    const genre = searchParams.get('genre') || '';
+    const condition = searchParams.get('condition') || '';
+    const page = parseInt(searchParams.get('page') || '0', 10);
+    const [pageSize] = useState(6);
+
+    const [titleQuery, setTitleQuery] = useState(query);
+    const [conditionFilter, setConditionFilter] = useState(condition);
+    const [genreFilter, setGenreFilter] = useState(genre);
     const [books, setBooks] = useState([]);
+    const [totalPages, setTotalPages] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    const { user } = useAuth();
-    const token = user?.token || window.__ACCESS_TOKEN || localStorage.getItem('jwtToken');
-    const currentUserId = getUserIdFromJwt(token);
-    const isLoggedIn = currentUserId != null;
-    const [favoritesTick, setFavoritesTick] = useState(0);
+    useEffect(() => {
+        setTitleQuery(query);
+        setGenreFilter(genre);
+        setConditionFilter(condition);
+    }, [query, genre, condition]);
 
-    const [titleQuery, setTitleQuery] = useState('');
-    const [authorQuery, setAuthorQuery] = useState('');
-    const [conditionFilter, setConditionFilter] = useState('');
-    const [sortMode, setSortMode] = useState('default');
-
-    // функция загрузки для
-    const fetchBooks = async () => {
+    const fetchBooks = useCallback(async () => {
+        setLoading(true);
         try {
-            const data = await getAllBooks();
-            setBooks(data);
+            const data = await getAllBooks({
+                query: titleQuery || undefined,
+                genre: genreFilter || undefined,
+                condition: conditionFilter || undefined,
+                page: page,
+                size: pageSize
+            });
+            // странице избранного фильтруем локально
+            if (isFavorites && isLoggedIn) {
+                const favBooks = data.books.filter(b => isFavoriteBook(currentUserId, b.id));
+                setBooks(favBooks);
+                setTotalPages(1);
+            } else {
+                setBooks(data.books || []);
+                setTotalPages(data.totalPages || 0);
+            }
             setError(null);
         } catch (err) {
-            setError('не удалось загрузить список книг. проверьте, запущен ли сервер.');
-            console.error('error fetching books:', err);
+            setError(err.message);
         } finally {
             setLoading(false);
         }
-    };
+    }, [titleQuery, genreFilter, conditionFilter, page, pageSize, isFavorites, isLoggedIn, currentUserId]);
 
-    // загрузка данных при
     useEffect(() => {
         fetchBooks();
-    }, []);
+    }, [fetchBooks]);
 
-    useEffect(() => {
-        return subscribeFavoritesChanged(() => {
-            setFavoritesTick((x) => x + 1);
-        });
-    }, []);
+    const getNewParams = (updates) => {
+        const params = {};
+        if (titleQuery) params.query = titleQuery;
+        if (genreFilter) params.genre = genreFilter;
+        if (conditionFilter) params.condition = conditionFilter;
+        if (page > 0) params.page = page;
 
-    const baseBooks = useMemo(() => {
-        if (!Array.isArray(books)) return [];
-        if (!isFavorites) return books;
-        if (!isLoggedIn) return [];
-        return books.filter((b) => isFavoriteBook(currentUserId, b?.id));
-        // комментарий важный ключевой
-    }, [books, isFavorites, isLoggedIn, currentUserId, favoritesTick]);
+        return { ...params, ...updates };
+    };
 
-    const filteredBooks = useMemo(() => {
-        const norm = (v) => String(v || '').trim().toLowerCase();
-        const qTitle = norm(titleQuery);
-        const qAuthor = norm(authorQuery);
-        const qCondition = String(conditionFilter || '').trim();
+    const handleSearchChange = (val) => {
+        setSearchParams(getNewParams({ query: val, page: 0 }));
+    };
 
-        let out = baseBooks;
+    const handleGenreChange = (val) => {
+        setSearchParams(getNewParams({ genre: val, page: 0 }));
+    };
 
-        if (qTitle) {
-            out = out.filter((b) => norm(b?.title).includes(qTitle));
+    const handleConditionChange = (val) => {
+        setSearchParams(getNewParams({ condition: val, page: 0 }));
+    };
+
+    const handlePageChange = (newPage) => {
+        if (newPage >= 0 && newPage < totalPages) {
+            setSearchParams(getNewParams({ page: newPage }));
+            window.scrollTo(0, 0);
         }
-        if (qAuthor) {
-            out = out.filter((b) => norm(b?.author).includes(qAuthor));
-        }
-        if (qCondition) {
-            out = out.filter((b) => String(b?.condition || '').trim() === qCondition);
-        }
+    };
 
-        if (sortMode === 'title-asc') {
-            out = [...out].sort((a, b) => String(a?.title || '').localeCompare(String(b?.title || ''), 'ru', { sensitivity: 'base' }));
-        } else if (sortMode === 'title-desc') {
-            out = [...out].sort((a, b) => String(b?.title || '').localeCompare(String(a?.title || ''), 'ru', { sensitivity: 'base' }));
-        }
-
-        return out;
-    }, [baseBooks, titleQuery, authorQuery, conditionFilter, sortMode]);
-
-    const conditionOptions = useMemo(
-        () => ['Новое', 'Очень хорошее', 'Хорошее', 'Удовлетворительное', 'Плохое'],
-        []
-    );
-
-
-    if (loading) {
+    if (loading && books.length === 0) {
         return <div style={{...catalogContainerStyle, textAlign: 'center', padding: '50px 0 20px 0'}}>загрузка каталога...</div>;
     }
 
@@ -181,70 +184,83 @@ export default function Catalog({ isFavorites = false }) {
         return <div style={{...catalogContainerStyle, textAlign: 'center', padding: '50px 0 20px 0', color: 'red'}}>ошибка: {error}</div>;
     }
 
-     return (
-         <div style={catalogContainerStyle}>
-             <h1 style={catalogTitleStyle}>Каталог книг</h1>
+    return (
+        <div style={catalogContainerStyle}>
+            <h1 style={catalogTitleStyle}>{isFavorites ? 'Избранное' : 'Каталог книг'}</h1>
 
-            {(!isFavorites || isLoggedIn) ? (
-                <div style={filtersBarStyle}>
-                    <input
-                        value={titleQuery}
-                        onChange={(e) => setTitleQuery(e.target.value)}
-                        placeholder="поиск по названию"
-                        style={filterInputStyle}
-                    />
-                    <input
-                        value={authorQuery}
-                        onChange={(e) => setAuthorQuery(e.target.value)}
-                        placeholder="поиск по автору"
-                        style={filterInputStyle}
-                    />
-                    <select
-                        value={conditionFilter}
-                        onChange={(e) => setConditionFilter(e.target.value)}
-                        style={filterSelectStyle}
-                    >
-                        <option value="">все состояния</option>
-                        {conditionOptions.map((c) => (
-                            <option key={c} value={c}>{c}</option>
+           {(!isFavorites || isLoggedIn) ? (
+               <div style={filtersBarStyle}>
+                   <input
+                       value={titleQuery}
+                       onChange={(e) => handleSearchChange(e.target.value)}
+                       placeholder="поиск по названию или автору"
+                       style={filterInputStyle}
+                   />
+
+                   <select
+                       value={genreFilter}
+                       onChange={(e) => handleGenreChange(e.target.value)}
+                       style={filterSelectStyle}
+                   >
+                       <option value="">все жанры</option>
+                       {GENRE_OPTIONS.map(g => <option key={g} value={g}>{g}</option>)}
+                   </select>
+
+                   <select
+                       value={conditionFilter}
+                       onChange={(e) => handleConditionChange(e.target.value)}
+                       style={filterSelectStyle}
+                   >
+                       <option value="">любое состояние</option>
+                       {CONDITION_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                   </select>
+               </div>
+           ) : null}
+
+            {books.length > 0 ? (
+                <>
+                    <div style={booksGridStyle}>
+                        {books.map((book) => (
+                            <BookCard
+                                key={book.id}
+                                book={book}
+                                isLoggedIn={isLoggedIn}
+                                currentUserId={currentUserId}
+                            />
                         ))}
-                    </select>
-                    <select
-                        value={sortMode}
-                        onChange={(e) => setSortMode(e.target.value)}
-                        style={filterSelectStyle}
-                    >
-                        <option value="default">сортировка: по умолчанию</option>
-                        <option value="title-asc">по названию: а-я</option>
-                        <option value="title-desc">по названию: я-а</option>
-                    </select>
-                </div>
-            ) : null}
-            
-            {isFavorites && !isLoggedIn ? (
-                <p style={{ fontSize: '1.1em', color: '#666' }}>
-                    войдите в аккаунт, чтобы видеть избранное.
-                </p>
-            ) : filteredBooks.length === 0 ? (
-                <p style={{fontSize: '1.2em', color: '#666'}}>
-                    пока нет книг для обмена. <Link to="/add-book" style={{color: primaryColor}}>добавьте первую!</Link>
-                </p>
+                    </div>
+
+                    {/* Пагинация */}
+                    {!isFavorites && totalPages > 1 && (
+                        <div style={paginationContainerStyle}>
+                            <button
+                                onClick={() => handlePageChange(page - 1)}
+                                disabled={page === 0}
+                                style={pageButtonStyle}
+                            >
+                                Назад
+                            </button>
+                            <span style={pageInfoStyle}>
+                                Страница {page + 1} из {totalPages}
+                            </span>
+                            <button
+                                onClick={() => handlePageChange(page + 1)}
+                                disabled={page === totalPages - 1}
+                                style={pageButtonStyle}
+                            >
+                                Вперед
+                            </button>
+                        </div>
+                    )}
+                </>
             ) : (
-                <div style={bookGridStyle}>
-                    {filteredBooks.map((book) => (
-                        <BookCard
-                            key={book.id}
-                            book={book}
-                            isLoggedIn={isLoggedIn}
-                            currentUserId={currentUserId}
-                            favoritesTick={favoritesTick}
-                        />
-                    ))}
+                <div style={emptyStateStyle}>
+                    {isFavorites ? 'в избранном пока пусто' : 'книг не найдено'}
                 </div>
             )}
-        </div>
-    );
-}
+        </div>
+    );
+};
 
 // стили изменений без
 
@@ -293,7 +309,7 @@ const catalogTitleStyle = {
     letterSpacing: '0.5px',
 };
 
-const bookGridStyle = {
+const booksGridStyle = {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
     gap: '30px',
@@ -404,9 +420,42 @@ const filterInputStyle = {
 };
 
 const filterSelectStyle = {
-    padding: '10px 12px',
-    borderRadius: 10,
-    border: '1px solid rgba(0,0,0,0.15)',
-    backgroundColor: 'white',
+    padding: '10px',
+    borderRadius: '10px',
+    border: `1px solid ${primaryColor}`,
     outline: 'none',
+    backgroundColor: '#fff',
+    color: textColor,
+    flex: '1',
+    minWidth: '150px'
 };
+
+const paginationContainerStyle = {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: '40px',
+    gap: '20px'
+};
+
+const pageButtonStyle = {
+    padding: '8px 16px',
+    backgroundColor: cardBackground,
+    border: `1px solid ${primaryColor}`,
+    borderRadius: '8px',
+    cursor: 'pointer',
+    color: textColor
+};
+
+const pageInfoStyle = {
+    color: textColor,
+    fontWeight: '500'
+};
+
+const emptyStateStyle = {
+    textAlign: 'center',
+    padding: '100px 0',
+    fontSize: '18px',
+    color: '#777'
+};
+

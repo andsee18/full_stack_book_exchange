@@ -35,6 +35,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody User creds, HttpServletResponse response) {
+        // вход пользователя
         return userService.authenticate(creds.getUsername(), creds.getPassword()).map(user -> {
             String accessToken = jwtTokenUtil.generateToken(user.getId(), user.getRole());
             RefreshToken refresh = refreshTokenService.createRefreshToken(user);
@@ -58,6 +59,7 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody User newUser) {
+        // регистрация нового пользователя
         try {
             User registeredUser = userService.register(newUser);
             return ResponseEntity.status(201).body(Map.of(
@@ -75,6 +77,7 @@ public class AuthController {
 
     @PostMapping("/refresh")
     public ResponseEntity<?> refresh(HttpServletRequest request, HttpServletResponse response) {
+        // обновление токена доступа
         String tokenValue = null;
         if (request.getCookies() != null) {
             for (Cookie c : request.getCookies()) {
@@ -85,24 +88,23 @@ public class AuthController {
 
         return refreshTokenService.findByToken(tokenValue)
             .map(rt -> {
-                // 1. Check expiration
+                // проверка срока действия
                 if (!refreshTokenService.verifyExpiration(rt)) {
-                    // Token expired
+                    // токен истек
                     return ResponseEntity.status(403).body(java.util.Map.of("error", "Refresh token was expired. Please make a new signin request"));
                 }
 
-                // 2. Refresh Token Rotation
-                // We delete the old refresh token to prevent reuse/theft replay
+                // ротация токена
                 refreshTokenService.deleteById(rt.getId());
 
-                // 3. Find user and create NEW refresh token
+                // создание новой пары токенов
                 User user = userService.findById(rt.getUserId()).orElseThrow(() -> new RuntimeException("User not found"));
                 RefreshToken newRt = refreshTokenService.createRefreshToken(user);
 
-                // 4. Generate new Access Token
+                // генерация нового токена
                 String newAccess = jwtTokenUtil.generateToken(user.getId(), user.getRole());
 
-                // 5. Send new Refresh Token in secure cookie
+                // отправка нового токена защищенной
                 ResponseCookie cookie = ResponseCookie.from("refreshToken", newRt.getToken())
                         .httpOnly(true)
                         .path("/api/auth")
@@ -129,7 +131,7 @@ public class AuthController {
             for (Cookie c : request.getCookies()) if ("refreshToken".equals(c.getName())) tokenValue = c.getValue();
         }
         if (tokenValue != null) {
-            // точечный выход отзыв токена только текущей сессии
+            // точечный выход отзыв токена
             refreshTokenService.findByToken(tokenValue).ifPresent(rt -> refreshTokenService.deleteById(rt.getId()));
         }
         ResponseCookie cookie = ResponseCookie.from("refreshToken", "")

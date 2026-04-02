@@ -37,21 +37,21 @@ public class UserController {
         this.refreshTokenService = refreshTokenService;
     }
 
-    // регистрация нового пользователя
+    // регистрация
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public User create(@RequestBody User user) {
         User savedUser = userService.register(user);
-        // не возвращаем хеш пароля клиенту
+        // скрываем пароль
         savedUser.setPassword(null);
         return savedUser;
     }
 
-    // вход аутентификация пользователя
+    // вход
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody User user, jakarta.servlet.http.HttpServletResponse response) {
-        // legacy endpoint: возвращаем токены как /api/auth/login
-        return userService.authenticate(user.getUsername(), user.getPassword()).map(u -> {
+    public ResponseEntity<?> login(@RequestBody User loginUser, jakarta.servlet.http.HttpServletResponse response) {
+        // возвращаем токены как
+        return userService.authenticate(loginUser.getUsername(), loginUser.getPassword()).map(u -> {
             String accessToken = jwtTokenUtil.generateToken(u.getId());
             RefreshToken refresh = refreshTokenService.createRefreshToken(u);
 
@@ -67,15 +67,23 @@ public class UserController {
         }).orElseGet(() -> ResponseEntity.status(401).body(Map.of("error", "Invalid credentials")));
     }
 
-    // получить всех пользователей
+    // все пользователи
     @GetMapping
     public List<User> findAll() {
-        // доступ ограничен на уровне security конфигурации
+        // поиск всех
         return userService.findAll();
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<User> findById(@PathVariable Long id) {
+        return userService.findById(id)
+            .map(ResponseEntity::ok)
+            .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    // получение текущего пользователя
     @GetMapping("/me")
-    public ResponseEntity<?> me() {
+    public ResponseEntity<?> getMe() {
         Long authUserId = getAuthenticatedUserId();
         if (authUserId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -89,26 +97,25 @@ public class UserController {
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
     }
 
-    // получить пользователя важный
-    @GetMapping("/{id}")
-    public ResponseEntity<User> findById(@PathVariable Long id) {
-        return userService.findById(id)
-            .map(ResponseEntity::ok)
-            .orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    // обновить пользователя важный
+    // обновление профиля
     @PutMapping("/{id}")
-    public ResponseEntity<User> update(@PathVariable Long id, @RequestBody User user) {
-        Long authUserId = getAuthenticatedUserId();
-        if (authUserId == null) {
+    public ResponseEntity<User> update(@PathVariable Long id, @RequestBody User userDetails) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        if (!authUserId.equals(id)) {
-            throw new PermissionDeniedException("Нельзя редактировать чужой профиль");
+
+        try {
+            // проверка прав доступа
+            Long currentUserId = Long.parseLong(authentication.getName());
+            if (!currentUserId.equals(id)) {
+                throw new PermissionDeniedException("You can only update your own profile.");
+            }
+        } catch (NumberFormatException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        return userService.update(id, user)
+        return userService.update(id, userDetails)
             .map(u -> {
                 u.setPassword(null);
                 return ResponseEntity.ok(u);

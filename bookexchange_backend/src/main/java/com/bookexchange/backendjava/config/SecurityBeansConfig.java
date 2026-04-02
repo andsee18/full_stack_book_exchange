@@ -43,7 +43,7 @@ public class SecurityBeansConfig implements WebMvcConfigurer {
         return authConfig.getAuthenticationManager();
     }
 
-    // конфигурация cors
+    // конфигурация важный ключевой
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
@@ -83,7 +83,7 @@ public class SecurityBeansConfig implements WebMvcConfigurer {
                 .requestMatchers(HttpMethod.GET, "/api/users/me").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/users/*").permitAll()  // Публичный профиль владельца по id
                 .requestMatchers(HttpMethod.GET, "/api/books", "/api/books/", "/api/books/**").permitAll()  // Публичный каталог/детали
-                // доступ к списку всех пользователей только для админов
+                // доступ списку всех пользователей
                 .requestMatchers(HttpMethod.GET, "/api/users", "/api/users/").hasRole("ADMIN")
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()

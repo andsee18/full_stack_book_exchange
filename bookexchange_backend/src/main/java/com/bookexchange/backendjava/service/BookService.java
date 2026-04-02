@@ -18,15 +18,18 @@ public class BookService {
     private final BookRepository bookRepository;
     private final UserService userService; 
     private final ExchangeRequestRepository exchangeRequestRepository;
+    private final S3Service s3Service;
 
-    public BookService(BookRepository bookRepository, UserService userService, ExchangeRequestRepository exchangeRequestRepository) {
+    public BookService(BookRepository bookRepository, UserService userService, ExchangeRequestRepository exchangeRequestRepository, S3Service s3Service) {
         this.bookRepository = bookRepository;
         this.userService = userService;
         this.exchangeRequestRepository = exchangeRequestRepository;
+        this.s3Service = s3Service;
     }
 
     @PostConstruct
     public void normalizeLegacyStatuses() {
+        // исправление старых статусов книг
         try {
             int updated = bookRepository.updateStatusWhereLowerEquals("exchanged", "available");
             if (updated > 0) {
@@ -38,6 +41,7 @@ public class BookService {
     }
 
     public Optional<Book> save(Book book) {
+        // сохранение новой книги
         Long currentOwnerId;
         try {
             String principalId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -62,6 +66,7 @@ public class BookService {
     }
     
     public boolean updateOwnerAndStatus(Long bookId, Long newOwnerId, String newStatus) {
+        // обновление владельца и статуса
         Optional<Book> bookOpt = bookRepository.findById(bookId);
         if (bookOpt.isEmpty()) {
             return false;
@@ -75,20 +80,30 @@ public class BookService {
         book.setOwnerId(newOwnerId);
         book.setStatus(newStatus);
 
-        // комментарий важный ключевой
+        // обновление в базе
         bookRepository.update(book);
         return true;
+    }
+
+    public List<Book> findAll() {
+        return bookRepository.findAll();
+    }
+
+    /* поиск с фильтрами */
+    public List<Book> findWithFilters(String query, String genre, String condition, String status, int page, int size) {
+        return bookRepository.findWithFilters(query, genre, condition, status, page, size);
+    }
+
+    /* общее количество по фильтрам */
+    public long countWithFilters(String query, String genre, String condition, String status) {
+        return bookRepository.countWithFilters(query, genre, condition, status);
     }
 
     public Optional<Book> findById(Long id) {
         return bookRepository.findById(id);
     }
-    
-    public List<Book> findAll() {
-        return bookRepository.findAll();
-    }
 
-    // обновить книгу важный
+    // обновить книгу
     public Optional<Book> update(Long id, Book updatedBook) {
         Optional<Book> existingBookOpt = bookRepository.findById(id);
         
@@ -105,10 +120,9 @@ public class BookService {
             throw new PermissionDeniedException("Authentication context error for update.");
         }
         
-        // критическая проверка важный
+        // проверка прав владельца
         if (!existingBook.getOwnerId().equals(currentUserId)) {
-            System.err.println("Permission denied: User " + currentUserId + " attempted to update book " + id + " owned by " + existingBook.getOwnerId());
-            throw new PermissionDeniedException("You do not have permission to update this book."); // 403
+            throw new PermissionDeniedException("You do not have permission to update this book.");
         }
         
         if (userService.findById(existingBook.getOwnerId()).isEmpty()) {
@@ -131,12 +145,12 @@ public class BookService {
             existingBook.setCondition(updatedBook.getCondition().trim());
         }
 
-        // сохраняем старую обложку, если пришло пусто
+        // обновление обложки
         if (updatedBook.getCoverUrl() != null && !updatedBook.getCoverUrl().trim().isEmpty()) {
             existingBook.setCoverUrl(updatedBook.getCoverUrl().trim());
         }
 
-        // сохраняем старый статус, если пришло пусто
+        // обновление статуса
         if (updatedBook.getStatus() != null && !updatedBook.getStatus().trim().isEmpty()) {
             existingBook.setStatus(updatedBook.getStatus().trim());
         }
@@ -151,13 +165,13 @@ public class BookService {
     // удаление книги
     @Transactional
     public boolean delete(Long id) {
-        Optional<Book> existingBookOpt = bookRepository.findById(id);
+        Optional<Book> bookOpt = bookRepository.findById(id);
 
-        if (existingBookOpt.isEmpty()) {
+        if (bookOpt.isEmpty()) {
             return false; // 404
         }
-        Book existingBook = existingBookOpt.get();
-        
+        Book existingBook = bookOpt.get();
+
         Long currentUserId;
         try {
             String principalId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -166,13 +180,12 @@ public class BookService {
             throw new PermissionDeniedException("Authentication context error for delete.");
         }
 
-        // проверка прав доступа к удалению
+        // проверка прав доступа удалению
         if (!existingBook.getOwnerId().equals(currentUserId)) {
-            System.err.println("Permission denied: User " + currentUserId + " attempted to delete book " + id + " owned by " + existingBook.getOwnerId());
             throw new PermissionDeniedException("You do not have permission to delete this book."); // 403
         }
 
-        // отмена всех связанных заявок на обмен
+        // отмена заявок на обмен
         try {
             exchangeRequestRepository.cancelPendingByBookId(id);
         } catch (Exception e) {

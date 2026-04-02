@@ -10,17 +10,17 @@ import org.springframework.web.context.request.WebRequest;
 import java.util.HashMap;
 import java.util.Map;
 
-@ControllerAdvice // Делает этот класс глобальным обработчиком для всех контроллеров
+@ControllerAdvice // глобальный обработчик ошибок
 public class GlobalExceptionHandler {
 
-    // перехватывает исключение которое
+    // ошибка доступа
     @ExceptionHandler(PermissionDeniedException.class)
     public ResponseEntity<String> handlePermissionDeniedException(PermissionDeniedException e) {
         System.err.println("GLOBAL HANDLER: Caught PermissionDeniedException. Returning 403.");
-        return new ResponseEntity<>(e.getMessage(), HttpStatus.FORBIDDEN); // 403 Forbidden
+        return new ResponseEntity<>(e.getMessage(), HttpStatus.FORBIDDEN); // 403 forbidden
     }
 
-    // возвращаем сообщением важный
+    // ошибка плохой запрос
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleBadRequest(IllegalArgumentException e) {
         Map<String, Object> response = new HashMap<>();
@@ -30,7 +30,7 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
-    // обработка всех остальных
+    // общая ошибка сервера
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGlobalException(Exception e, WebRequest request) {
         Map<String, Object> response = new HashMap<>();
@@ -38,7 +38,7 @@ public class GlobalExceptionHandler {
         response.put("message", e.getMessage());
         response.put("error", e.getClass().getSimpleName());
         
-        // логируем консоль важный
+        // логи в консоль
         System.err.println("=== EXCEPTION OCCURRED ===");
         System.err.println("Type: " + e.getClass().getName());
         System.err.println("Message: " + e.getMessage());

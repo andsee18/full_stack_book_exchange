@@ -49,8 +49,8 @@ export default function Register() {
             const newUser = await registerUser(userData); // <-- Вызов API
 
             // запрос успешен если
-            setMessage(`Успешная регистрация! ID: ${newUser.id}`);
-            
+            setMessage('Успешная регистрация! Перенаправление на страницу входа...');
+
             // очистка формы важный
             setUsername('');
             setEmail('');
@@ -59,8 +59,10 @@ export default function Register() {
             setPasswordConfirm('');
             setProfileImage(null);
 
-            // после успешной регистрации
-            navigate('/', { replace: true });
+            // после успешной регистрации кидаем на страницу входа
+            setTimeout(() => {
+                navigate('/login');
+            }, 2000);
 
         } catch (error) {
             // обработка ошибок важный

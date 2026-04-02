@@ -18,7 +18,7 @@ public class BookRepository {
 
     private final JdbcTemplate jdbcTemplate;
 
-    // маппер преобразования для
+    // маппер сущности
     private final RowMapper<Book> bookRowMapper = (rs, rowNum) -> {
         Book book = new Book();
         book.setId(rs.getLong("id"));
@@ -37,7 +37,7 @@ public class BookRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    // создать книгу важный
+    // сохранить книгу
     public Book save(Book book) {
         final String sql = "INSERT INTO books (title, author, genre, description, condition, cover_url, owner_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -68,7 +68,63 @@ public class BookRepository {
         return jdbcTemplate.query(sql, bookRowMapper);
     }
 
-    // найти книгу важный
+    // поиск с фильтрами и пагинацией
+    public List<Book> findWithFilters(String query, String genre, String condition, String status, int page, int size) {
+        StringBuilder sql = new StringBuilder("SELECT * FROM books WHERE 1=1 ");
+        java.util.List<Object> params = new java.util.ArrayList<>();
+
+        if (query != null && !query.isEmpty()) {
+            sql.append(" AND (lower(title) LIKE lower(?) OR lower(author) LIKE lower(?)) ");
+            params.add("%" + query + "%");
+            params.add("%" + query + "%");
+        }
+        if (genre != null && !genre.isEmpty()) {
+            sql.append(" AND lower(genre) = lower(?) ");
+            params.add(genre);
+        }
+        if (condition != null && !condition.isEmpty()) {
+            sql.append(" AND lower(condition) = lower(?) ");
+            params.add(condition);
+        }
+        if (status != null && !status.isEmpty()) {
+            sql.append(" AND lower(status) = lower(?) ");
+            params.add(status);
+        }
+
+        // пагинация sql
+        sql.append(" ORDER BY id DESC LIMIT ? OFFSET ? ");
+        params.add(size);
+        params.add(page * size);
+
+        return jdbcTemplate.query(sql.toString(), bookRowMapper, params.toArray());
+    }
+
+    // подсчет книг по фильтрам
+    public long countWithFilters(String query, String genre, String condition, String status) {
+        StringBuilder sql = new StringBuilder("SELECT count(*) FROM books WHERE 1=1 ");
+        java.util.List<Object> params = new java.util.ArrayList<>();
+
+        if (query != null && !query.isEmpty()) {
+            sql.append(" AND (lower(title) LIKE lower(?) OR lower(author) LIKE lower(?)) ");
+            params.add("%" + query + "%");
+            params.add("%" + query + "%");
+        }
+        if (genre != null && !genre.isEmpty()) {
+            sql.append(" AND lower(genre) = lower(?) ");
+            params.add(genre);
+        }
+        if (condition != null && !condition.isEmpty()) {
+            sql.append(" AND lower(condition) = lower(?) ");
+            params.add(condition);
+        }
+        if (status != null && !status.isEmpty()) {
+            sql.append(" AND lower(status) = lower(?) ");
+            params.add(status);
+        }
+
+        return jdbcTemplate.queryForObject(sql.toString(), Long.class, params.toArray());
+    }
+
     public Optional<Book> findById(Long id) {
         final String sql = "SELECT id, title, author, genre, description, condition, cover_url, owner_id, status FROM books WHERE id = ?";
         try {
@@ -79,7 +135,7 @@ public class BookRepository {
         }
     }
 
-    // обновить книгу важный
+    // обновить книгу
     public int update(Book book) {
         final String sql = "UPDATE books SET title = ?, author = ?, genre = ?, description = ?, condition = ?, cover_url = ?, owner_id = ?, status = ? WHERE id = ?";
         return jdbcTemplate.update(sql,
@@ -94,15 +150,15 @@ public class BookRepository {
             book.getId());
     }
 
-    // удалить книгу важный
+    // удалить книгу
     public int delete(Long id) {
         final String sql = "DELETE FROM books WHERE id = ?";
         return jdbcTemplate.update(sql, id);
     }
 
-    // комментарий важный ключевой
-    public int updateStatusWhereLowerEquals(String fromStatus, String toStatus) {
-        final String sql = "UPDATE books SET status = ? WHERE lower(status) = lower(?)";
-        return jdbcTemplate.update(sql, toStatus, fromStatus);
+    // обновление статуса по условию
+    public int updateStatusWhereLowerEquals(String target, String source) {
+        String sql = "UPDATE books SET status = ? WHERE lower(status) = lower(?)";
+        return jdbcTemplate.update(sql, target, source);
     }
 }

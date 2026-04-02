@@ -31,19 +31,19 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "role must be USER or ADMIN"));
         }
 
-        // защита от смены собственной роли
+        // нельзя менять свою роль
         try {
             Long currentUserId = Long.parseLong(authentication.getName());
             if (currentUserId.equals(id)) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Нельзя изменить собственную роль"));
             }
         } catch (NumberFormatException e) {
-            // обработка ошибки парсинга id
+            // ошибка парсинга id
         }
 
-        // предотвращение удаления последнего администратора
+        // нельзя удалять последнего админа
         if ("USER".equals(normalized)) {
-            // проверка текущей роли пользователя до обновления
+            // поиск пользователя
             var targetUser = userService.findById(id);
             if (targetUser.isPresent() && "ADMIN".equals(targetUser.get().getRole())) {
                 long adminCount = userService.countAdmins();

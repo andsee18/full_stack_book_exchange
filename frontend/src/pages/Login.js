@@ -7,7 +7,7 @@ const primaryColor = '#a89d70';  
 const darkBeigeColor = '#eae7dd'; 
 
 export default function Login() {
-    // меняем для важный
+    // меняем важный для
     const [username, setUsername] = useState(''); 
     const [password, setPassword] = useState('');
     // состояние вывода для
@@ -29,14 +29,12 @@ export default function Login() {
             
             if (success) {
                 // вход успешен важный
-                setMessage(`Вход успешен! Приветствуем ${username}.`);
-                // очистить поля важный
-                setUsername('');
-                setPassword('');
-                // перенаправить главную важный
-                setTimeout(() => navigate('/'), 1500);
+                setMessage('Вход успешен! Перенаправление...');
+                setTimeout(() => {
+                    navigate('/'); // перенаправляем на главную (страница всех книг)
+                }, 1000);
             } else {
-                setMessage('Ошибка входа: неверное имя пользователя или пароль.');
+                setMessage('Ошибка: Неверное имя пользователя или пароль.');
             }
 
         } catch (error) {

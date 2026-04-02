@@ -2,10 +2,10 @@ import axios from 'axios';
 
 import { clearAccessToken, refreshAccessToken } from './authApi';
 
-// устанавливаем базовый url
+// базовый url api
 const API_URL = 'http://localhost:5000/api/books';
 
-// создаем экземпляр axios
+// экземпляр axios
 const bookApi = axios.create({
     baseURL: API_URL,
     headers: {
@@ -13,14 +13,14 @@ const bookApi = axios.create({
     },
 });
 
-// перехватчик запросов добавление токена
+// перехватчик запросов
 bookApi.interceptors.request.use(
     (config) => {
-        // получаем токен из памяти или хранилища
+        // получение токена
         const token = window.__ACCESS_TOKEN || localStorage.getItem('jwtToken');
 
         if (token) {
-            // если токен существует добавляем его в заголовок
+            // добавление заголовка авторизации
             config.headers['Authorization'] = `Bearer ${token}`;
         }
         return config;
@@ -30,7 +30,7 @@ bookApi.interceptors.request.use(
     }
 );
 
-// перехватчик ответов обработка ошибки 401
+// перехватчик ответов
 bookApi.interceptors.response.use(
     (response) => response,
     async (error) => {
@@ -38,16 +38,20 @@ bookApi.interceptors.response.use(
         const originalRequest = error?.config;
 
         if (status === 401 && originalRequest && !originalRequest._retry) {
+            // попытка обновления токена
             originalRequest._retry = true;
 
             try {
                 const refreshed = await refreshAccessToken();
                 const newToken = typeof refreshed === 'string' ? refreshed : refreshed?.accessToken;
                 if (!newToken) throw new Error('No accessToken after refresh');
+
+                // повтор запроса с новым токеном
                 originalRequest.headers = originalRequest.headers || {};
                 originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
                 return bookApi(originalRequest);
             } catch (refreshErr) {
+                console.error('Ошибка обновления токена в bookApi.');
                 clearAccessToken();
                 return Promise.reject(refreshErr);
             }
@@ -57,20 +61,19 @@ bookApi.interceptors.response.use(
     }
 );
 
-// функции работы для
-
-/* получить все книги */
-export const getAllBooks = async () => {
+// получение всех книг с фильтрами
+export const getAllBooks = async (params = {}) => {
     try {
-        const response = await bookApi.get('/'); 
+        const response = await bookApi.get('/', { params });
+        // сервер теперь возвращает объект
         return response.data;
     } catch (error) {
-        console.error('Error fetching all books:', error);
+        console.error('Error fetching books:', error);
         throw error;
     }
 };
 
-/* получить одну книгу */
+// получение книги по id
 export const getBookById = async (id) => {
     try {
         const response = await bookApi.get(`/${id}`); 
@@ -81,10 +84,14 @@ export const getBookById = async (id) => {
     }
 };
 
-/* создать новую книгу */
-export const createBook = async (bookData) => {
+// создание книги
+export const createBook = async (formData) => {
     try {
-        const response = await bookApi.post('/', bookData); 
+        const response = await bookApi.post('/', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
         return response.data;
     } catch (error) {
         console.error('Error creating book:', error.response ? error.response.data : error.message);
@@ -92,10 +99,14 @@ export const createBook = async (bookData) => {
     }
 };
 
-/* обновить книгу важный */
-export const updateBook = async (id, bookData) => {
+// обновление книги
+export const updateBook = async (id, formData) => {
     try {
-        const response = await bookApi.put(`/${id}`, bookData);
+        const response = await bookApi.put(`/${id}`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
         return response.data;
     } catch (error) {
         console.error(`Error updating book with ID ${id}:`, error.response ? error.response.data : error.message);
@@ -103,7 +114,7 @@ export const updateBook = async (id, bookData) => {
     }
 };
 
-/* удалить книгу важный */
+// удаление книги
 export const deleteBook = async (id) => {
     try {
         await bookApi.delete(`/${id}`);

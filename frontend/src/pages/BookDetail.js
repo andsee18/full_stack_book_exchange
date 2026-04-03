@@ -547,141 +547,88 @@ const InfoItem = ({ label, value, action }) => (
 
 // стили изменений без
 const containerStyle = { 
-    maxWidth: '1000px', 
-    margin: '0 auto',
-    paddingTop: '20px'
+    maxWidth: 1000,
+    margin: '20px auto',
+    padding: '20px',
+    fontFamily: "'Montserrat', sans-serif"
 };
 
 const mainContentWrapperStyle = {
-    padding: '0 10px',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: '30px 40px',
+    boxShadow: '0 8px 30px rgba(0,0,0,0.05)'
 };
 
 
 const backLinkStyle = { 
-    display: 'inline-flex', 
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: '20px', 
-    textDecoration: 'none', 
-    transition: 'all 0.2s ease-out',
-    padding: '10px 14px',
-    borderRadius: '10px',
-    fontWeight: 'bold', 
-    fontSize: '1.02em',
-    marginLeft: '0',
-    border: '1px solid rgba(168, 157, 112, 0.55)',
+    display: 'inline-block',
+    marginBottom: 20,
+    textDecoration: 'none',
+    color: primaryColor,
+    fontWeight: 'bold'
 };
 
-const titleHeaderStyle = { 
-    display: 'flex', 
-    alignItems: 'flex-start', 
-    justifyContent: 'space-between', 
-    marginBottom: '30px', 
-    borderBottom: '1px solid ' + primaryColor,
-    paddingBottom: '10px' 
+const titleStyle = {
+    margin: 0,
+    color: '#333',
+    fontSize: '2.2em'
+};
+const favoriteButtonStyle = {
+    background: 'none',
+    border: 'none',
+    fontSize: '1.8em',
+    cursor: 'pointer',
+    padding: 5,
+    display: 'flex'
+};
+const favoriteIconStyle = {
+    transition: 'transform 0.2s',
+    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))'
+};
+const favoriteAuthorStyle = {
+    marginLeft: 10,
+    padding: '6px 12px',
+    borderRadius: 6,
+    cursor: 'pointer',
+    fontSize: '0.85em',
+    fontWeight: 'bold',
+    border: `1px solid ${primaryColor}`,
+    transition: 'all 0.2s'
+};
+
+const titleHeaderStyle = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+    width: '100%'
 };
 
 const titleActionsStyle = {
     display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 10,
-    flex: '0 0 auto',
-};
-
-const titleStyle = {
-    margin: '0',
-    fontSize: '2em',
-    flex: '1 1 auto',
-    minWidth: 0,
-    paddingRight: 12,
-    lineHeight: 1.15,
-};
-const favoriteButtonStyle = {
-    width: 40,
-    height: 40,
-    borderRadius: '9999px',
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-    border: '1px solid rgba(168, 157, 112, 0.55)',
-    backgroundColor: 'rgba(253, 252, 247, 0.92)',
-    boxShadow: '0 4px 10px rgba(0,0,0,0.10)',
-    padding: 0,
-};
-
-const favoriteIconStyle = {
-    fontSize: 22,
-    lineHeight: 1,
-    transform: 'translateY(-1px)',
-};
-
-const favoriteAuthorStyle = {
-    backgroundColor: 'white',
-    color: primaryColor,
-    border: '1px solid ' + primaryColor,
-    borderRadius: '20px',
-    padding: '5px 12px',
-    marginTop: '10px',
-    cursor: 'pointer',
-    fontSize: '0.8em',
-    fontWeight: 'bold',
-    transition: 'background-color 0.2s',
-};
-
-const largeBookCoverWrapStyle = {
-    width: '250px',
-    height: '360px',
-    borderRadius: '10px',
-    boxShadow: '0 8px 15px rgba(0,0,0,0.15)',
-    margin: '0 0 30px 0',
-    position: 'relative',
-    overflow: 'hidden',
-};
-
-const largeBookCoverPlaceholderStyle = {
-    position: 'absolute',
-    inset: 0,
-    backgroundColor: darkBeigeColor,
-    backgroundImage: 'linear-gradient(135deg, rgba(168, 157, 112, 0.22) 0%, rgba(168, 157, 112, 0.06) 60%, rgba(168, 157, 112, 0.00) 100%)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#666',
-    fontSize: '1.05em',
-    fontWeight: 700,
-    textTransform: 'uppercase',
-    letterSpacing: '0.6px',
-    userSelect: 'none',
-};
-
-const largeBookCoverImageStyle = {
-    position: 'absolute',
-    inset: 0,
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover',
-    display: 'block',
+    gap: 12,
+    alignItems: 'center'
 };
 
 const contentGridStyle = { 
     display: 'grid', 
-    gridTemplateColumns: '2fr 1fr',
-    gap: '40px',
+    gridTemplateColumns: 'minmax(0, 1fr) 300px',
+    gap: 40
 };
 
-const detailColumnStyle = { padding: '0 10px' };
-const descriptionStyle = { lineHeight: '1.7', fontSize: '1.05em', marginBottom: '40px' }; 
+const detailColumnStyle = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 20
+};
+const descriptionStyle = { lineHeight: 1.6, color: '#555', fontSize: '1.05em', whiteSpace: 'pre-wrap' };
 
 const infoGridStyle = {
     display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: '20px',
-    marginTop: '10px',
-    padding: '20px 0',
-    borderTop: '1px dashed #ccc', 
-    borderBottom: '1px dashed #ccc',
+    gridTemplateColumns: 'auto 1fr',
+    gap: '15px 12px',
+    alignItems: 'baseline'
 };
 
 const infoItemStyle = {
@@ -695,22 +642,46 @@ const valueStyle = { margin: '5px 0 0 0', fontSize: '1.1em', fontWeight: 'bold' 
 
 /* стили важный для */
 const sidebarStyle = {
-    padding: '30px', 
-    backgroundColor: darkBeigeColor, 
-    borderRadius: '15px', 
-    boxShadow: '0 6px 15px rgba(0,0,0,0.1)',
     display: 'flex',
     flexDirection: 'column',
+    gap: 20
+};
+
+const largeBookCoverWrapStyle = {
+    position: 'relative',
+    width: '100%',
+    aspectRatio: '2/3',
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#f0f0f0',
+    marginBottom: 20
+};
+
+const largeBookCoverPlaceholderStyle = {
+    width: '100%',
+    height: '100%',
+    display: 'flex',
     alignItems: 'center',
-    textAlign: 'center'
+    justifyContent: 'center',
+    color: '#888',
+    fontSize: '1.2em'
+};
+
+const largeBookCoverImageStyle = {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover'
 };
 
 const ownerCardStyle = {
     display: 'flex',
     alignItems: 'center',
-    gap: '15px',
-    marginBottom: '25px',
-    padding: '15px',
-    backgroundColor: lightBackground,
-    borderRadius: '10px'
-}
+    padding: 16,
+    borderRadius: 12,
+    transition: 'all 0.2s',
+    cursor: 'pointer',
+    border: '1px solid transparent'
+};

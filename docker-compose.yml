@@ -1,9 +1,7 @@
-version: '3.8'
-
-services:
+﻿services:
   localstack:
     container_name: localstack_bc
-    image: localstack/localstack:3.0.0
+    image: localstack/localstack
     ports:
       - "4566:4566"
     environment:
@@ -14,9 +12,38 @@ services:
       - "./localstack:/var/lib/localstack"
       - "/var/run/docker.sock:/var/run/docker.sock"
     networks:
-      - bc_network
-
+      - bookexchange-net
+  backend:
+    build: ./bookexchange_backend
+    container_name: bookexchange-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - S3_ENDPOINT=http://localstack:4566
+      - S3_REGION=us-east-1
+      - S3_ACCESS_KEY=test
+      - S3_SECRET_KEY=test
+    depends_on:
+      localstack:
+        condition: service_started
+    networks:
+      - bookexchange-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/books/robots.txt"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+  frontend:
+    build: ./frontend
+    container_name: bookexchange-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - bookexchange-net
 networks:
-  bc_network:
+  bookexchange-net:
     driver: bridge
-

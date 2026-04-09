@@ -12,6 +12,7 @@ import {
     toggleFavoriteAuthor as toggleFavoriteAuthorStored,
     toggleFavoriteBook as toggleFavoriteBookStored,
 } from '../utils/favoritesStorage';
+import { Helmet } from 'react-helmet-async';
 
 const primaryColor = '#a89d70';
 const hoverColor = '#948a65';
@@ -211,11 +212,18 @@ export default function BookDetail() {
         };
     }, [isLoggedIn, currentUserId, book?.id, book?.ownerId, offerSentStorageKey]);
 
+    const bookTitle = book?.title || 'Загрузка...';
+    const bookAuthor = book?.author || '';
+
     if (loading) {
-        return <div style={containerStyle}>
-            <h1 style={{ ...titleStyle, textAlign: 'center' }}>Загрузка...</h1>
-            <p style={{ textAlign: 'center', color: '#666' }}>Запрашиваем данные книги с ID: {id}</p>
-        </div>;
+        return (
+            <div style={{...containerStyle, textAlign: 'center', padding: '100px 0'}}>
+                <Helmet>
+                    <title>Загрузка книги... - BookExchange</title>
+                </Helmet>
+                <p>Загрузка информации о книге...</p>
+            </div>
+        );
     }
     if (error) {
         return <div style={{ ...containerStyle, color: 'red', textAlign: 'center' }}>
@@ -281,6 +289,34 @@ export default function BookDetail() {
 
     return (
         <div style={containerStyle}>
+            <Helmet>
+                <title>{`${bookTitle} - ${bookAuthor} | BookExchange`}</title>
+                <meta name="description" content={`Книга "${bookTitle}" от автора ${bookAuthor}. Жанр: ${book?.genre}. Состояние: ${book?.condition}. Узнайте подробности и предложите обмен!`} />
+                <link rel="canonical" href={window.location.href} />
+                <meta property="og:title" content={`${bookTitle} - ${bookAuthor}`} />
+                <meta property="og:description" content={`Обменяйте книгу "${bookTitle}" на BookExchange.`} />
+                {book?.coverUrl && <meta property="og:image" content={book.coverUrl} />}
+                <meta property="og:type" content="book" />
+                <script type="application/ld+json">
+                    {JSON.stringify({
+                        "@context": "https://schema.org",
+                        "@type": "Book",
+                        "name": bookTitle,
+                        "author": {
+                            "@type": "Person",
+                            "name": bookAuthor
+                        },
+                        "genre": book?.genre,
+                        "description": book?.description,
+                        "image": book?.coverUrl,
+                        "offers": {
+                            "@type": "Offer",
+                            "availability": "https://schema.org/InStock",
+                            "itemCondition": book?.condition === 'Новое' ? "https://schema.org/NewCondition" : "https://schema.org/UsedCondition"
+                        }
+                    })}
+                </script>
+            </Helmet>
             <Link
                 to="/"
                 style={{

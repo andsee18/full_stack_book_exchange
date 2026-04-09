@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { createBook } from '../api/bookApi'; // импорт функции для отправки книги
+import { createBook, searchGoogleBooks } from '../api/bookApi';
+import { Helmet } from 'react-helmet-async';
 
 // палитра важный ключевой
 const primaryColor = '#a89d70';   
@@ -40,6 +41,8 @@ export default function AddBook() {
     const [coverPreview, setCoverPreview] = useState('');
     const [message, setMessage] = useState('');
     const [isError, setIsError] = useState(false);
+    const [isSearching, setIsSearching] = useState(false);
+    const [searchResults, setSearchResults] = useState([]);
 
     // обработчик изменений важный
     const handleChange = (e) => {
@@ -103,11 +106,84 @@ export default function AddBook() {
         }
     };
 
+    const handleGoogleSearch = async () => {
+        if (!bookData.title) return;
+        setIsSearching(true);
+        try {
+            const results = await searchGoogleBooks(bookData.title);
+            setSearchResults(results);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setIsSearching(false);
+        }
+    };
+
+    const selectGoogleBook = (gBook) => {
+        const info = gBook.volumeInfo;
+        setBookData({
+            ...bookData,
+            title: info.title || '',
+            author: info.authors ? info.authors.join(', ') : '',
+            description: info.description || '',
+            genre: (info.categories && GENRES.includes(info.categories[0])) ? info.categories[0] : GENRES[0]
+        });
+        setSearchResults([]);
+    };
+
     return (
         <div style={containerStyle}>
+            <Helmet>
+                <title>Добавить книгу - BookExchange</title>
+                <meta name="robots" content="noindex, nofollow" />
+            </Helmet>
             <div style={cardStyle}>
                 <h1 style={headerStyle}>Добавить книгу для обмена</h1>
                 
+                {/* поиск в Google Books */}
+                <div style={{ marginBottom: 20, textAlign: 'left' }}>
+                    <div style={{ display: 'flex', gap: 10 }}>
+                        <input
+                            type="text"
+                            placeholder="поиск по названию для автозаполнения"
+                            value={bookData.title}
+                            onChange={(e) => setBookData({ ...bookData, title: e.target.value })}
+                            style={{ ...inputStyle, marginBottom: 0, flex: 1 }}
+                        />
+                        <button
+                            type="button"
+                            onClick={handleGoogleSearch}
+                            disabled={isSearching}
+                            style={{ ...buttonStyle, marginTop: 0, width: 'auto', padding: '0 15px' }}
+                        >
+                            {isSearching ? '...' : 'Найти'}
+                        </button>
+                    </div>
+                    {searchResults.length > 0 && (
+                        <ul style={{
+                            listStyle: 'none',
+                            padding: 10,
+                            border: '1px solid #ccc',
+                            borderRadius: '5px',
+                            marginTop: 5,
+                            backgroundColor: 'white',
+                            maxHeight: '200px',
+                            overflowY: 'auto'
+                        }}>
+                            {searchResults.map(b => (
+                                <li key={b.id} onClick={() => selectGoogleBook(b)} style={{
+                                    padding: '5px 0',
+                                    borderBottom: '1px solid #eee',
+                                    cursor: 'pointer',
+                                    fontSize: '0.9em'
+                                }}>
+                                    <strong>{b.volumeInfo.title}</strong> - {b.volumeInfo.authors?.join(', ')}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+
                 {/* сообщение об успехе/ошибке */}
                 {message && (
                     <p style={{ ...messageStyle, color: isError ? 'red' : primaryColor }}>

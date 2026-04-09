@@ -124,3 +124,16 @@ export const deleteBook = async (id) => {
         throw error;
     }
 };
+
+// поиск книг в Google Books
+export const searchGoogleBooks = async (query) => {
+    try {
+        const response = await axios.get(`${API_URL}/search-google`, {
+            params: { q: query }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching Google Books:', error);
+        throw error;
+    }
+};

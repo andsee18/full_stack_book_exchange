@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { Helmet } from 'react-helmet-async';
 
 // бежевая палитра для
 const primaryColor = '#a89d70';   
@@ -48,11 +49,15 @@ export default function Login() {
     };
 
     return (
-        <div style={containerStyle}>
-            <div style={cardStyle}>
-                   <h1 style={headerStyle}>Вход в систему</h1>
-                <form onSubmit={handleSubmit} style={formStyle}>
-                    
+        <div style={containerStyle}>
+            <Helmet>
+                <title>Вход - BookExchange</title>
+                <meta name="robots" content="noindex, nofollow" />
+            </Helmet>
+            <div style={cardStyle}>
+                <h1 style={titleStyle}>Вход в систему</h1>
+                <form onSubmit={handleSubmit} style={formStyle}>
+                   
                     <input
                         type="text" // используем text для username
                            placeholder="Имя пользователя"
@@ -112,9 +117,9 @@ const cardStyle = {
     textAlign: 'center',
 };
 
-const headerStyle = {
+const titleStyle = {
     color: primaryColor,
-    marginBottom: '30px',
+    marginBottom: '10px',
 };
 
 const formStyle = {

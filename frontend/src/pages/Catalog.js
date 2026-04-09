@@ -7,6 +7,7 @@ import {
     isFavoriteBook,
     toggleFavoriteBook,
 } from '../utils/favoritesStorage';
+import { Helmet } from 'react-helmet-async';
 
 const primaryColor = '#a89d70';       // основной цвет
 const hoverColor = '#948a65';         // цвет при наведении
@@ -41,6 +42,7 @@ const BookCard = ({ book, isLoggedIn, currentUserId }) => {
                         src={book.coverUrl}
                         alt={`Обложка ${book.title}`}
                         style={bookCoverImageStyle}
+                        loading="lazy"
                         onError={(e) => {
                             e.currentTarget.style.display = 'none';
                         }}
@@ -186,6 +188,14 @@ export default function Catalog({ isFavorites = false }) {
 
     return (
         <div style={catalogContainerStyle}>
+            <Helmet>
+                <title>{isFavorites ? 'Избранное' : 'Каталог книг - BookExchange'}</title>
+                <meta name="description" content={isFavorites ? 'Ваши избранные книги' : 'Обменивайтесь книгами с другими пользователями. Находите интересные издания в нашем каталоге.'} />
+                <link rel="canonical" href={window.location.href} />
+                <meta property="og:title" content={isFavorites ? 'Избранное' : 'Каталог книг'} />
+                <meta property="og:description" content="Лучший сервис для обмена книгами." />
+                <meta property="og:type" content="website" />
+            </Helmet>
             <h1 style={catalogTitleStyle}>{isFavorites ? 'Избранное' : 'Каталог книг'}</h1>
 
            {(!isFavorites || isLoggedIn) ? (

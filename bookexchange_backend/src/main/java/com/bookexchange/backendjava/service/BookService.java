@@ -31,7 +31,7 @@ public class BookService {
     public void normalizeLegacyStatuses() {
         // исправление старых статусов книг
         try {
-            int updated = bookRepository.updateStatusWhereLowerEquals("exchanged", "available");
+            int updated = bookRepository.updateStatusWhereLowerEquals("available", "exchanged");
             if (updated > 0) {
                 System.out.println("Normalized legacy book statuses: exchanged -> available (" + updated + ")");
             }

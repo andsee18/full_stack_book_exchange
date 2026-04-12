@@ -148,7 +148,7 @@ export default function BookDetail() {
             if (Number(book.ownerId) === Number(currentUserId)) return;
 
             try {
-                const response = await getAllBooks();
+                const response = await getAllBooks({ size: 1000 });
                 if (!isActive) return;
                 const all = response.books || [];
                 const mine = Array.isArray(all)

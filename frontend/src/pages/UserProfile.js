@@ -39,7 +39,7 @@ export default function UserProfile() {
             try {
                 const [u, allBooksResponse] = await Promise.all([
                     getUserById(userId),
-                    getAllBooks(),
+                    getAllBooks({ size: 1000 }),
                 ]);
 
                 if (!isActive) return;

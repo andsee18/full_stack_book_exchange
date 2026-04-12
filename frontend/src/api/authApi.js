@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-const API_URL_USERS = 'http://localhost:5000/api/users';
-const API_URL_AUTH = 'http://localhost:5000/api/auth';
+const API_URL_USERS = '/api/users';
+const API_URL_AUTH = '/api/auth';
 
 let refreshPromise = null;
 

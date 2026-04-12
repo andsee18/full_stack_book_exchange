@@ -2,7 +2,7 @@ import axios from 'axios';
 
 import { clearAccessToken, refreshAccessToken } from './authApi';
 
-const API_URL = 'http://localhost:5000/api/ratings';
+const API_URL = '/api/ratings';
 
 const ratingApi = axios.create({
     baseURL: API_URL,

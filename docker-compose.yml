@@ -1,16 +1,14 @@
 ﻿services:
   localstack:
     container_name: localstack_bc
-    image: localstack/localstack
+    image: localstack/localstack:3.0
     ports:
       - "4566:4566"
     environment:
       - SERVICES=s3
       - DEBUG=1
-      - DOCKER_HOST=unix:///var/run/docker.sock
     volumes:
-      - "./localstack:/var/lib/localstack"
-      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./localstack:/var/lib/localstack:z"
     networks:
       - bookexchange-net
   backend:
@@ -19,11 +17,12 @@
     ports:
       - "5000:5000"
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:sqlite:/app/data/bookexchange.db
       - S3_ENDPOINT=http://localstack:4566
-      - S3_REGION=us-east-1
-      - S3_ACCESS_KEY=test
-      - S3_SECRET_KEY=test
+    env_file:
+      - .env
+    volumes:
+      - backend-data:/app/data
     depends_on:
       localstack:
         condition: service_started
@@ -47,3 +46,5 @@
 networks:
   bookexchange-net:
     driver: bridge
+volumes:
+  backend-data:

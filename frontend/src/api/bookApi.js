@@ -3,7 +3,7 @@ import axios from 'axios';
 import { clearAccessToken, refreshAccessToken } from './authApi';
 
 // базовый url api
-const API_URL = 'http://localhost:5000/api/books';
+const API_URL = '/api/books';
 
 // экземпляр axios
 const bookApi = axios.create({
@@ -91,6 +91,11 @@ export const createBook = async (formData) => {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },
+            // Let Axios handle the boundary automatically
+            transformRequest: [(data, headers) => {
+                delete headers['Content-Type'];
+                return data;
+            }],
         });
         return response.data;
     } catch (error) {
@@ -106,6 +111,11 @@ export const updateBook = async (id, formData) => {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },
+            // Let Axios handle the boundary automatically
+            transformRequest: [(data, headers) => {
+                delete headers['Content-Type'];
+                return data;
+            }],
         });
         return response.data;
     } catch (error) {

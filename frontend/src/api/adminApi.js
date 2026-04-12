@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { refreshAccessToken, clearAccessToken } from './authApi';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = '/api';
 
 const adminApi = axios.create({
     baseURL: API_URL,

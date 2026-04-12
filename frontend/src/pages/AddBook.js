@@ -121,13 +121,22 @@ export default function AddBook() {
 
     const selectGoogleBook = (gBook) => {
         const info = gBook.volumeInfo;
+
+        const coverUrl = info.imageLinks?.thumbnail || info.imageLinks?.smallThumbnail || '';
+
         setBookData({
             ...bookData,
             title: info.title || '',
             author: info.authors ? info.authors.join(', ') : '',
             description: info.description || '',
-            genre: (info.categories && GENRES.includes(info.categories[0])) ? info.categories[0] : GENRES[0]
+            genre: (info.categories && GENRES.includes(info.categories[0])) ? info.categories[0] : GENRES[0],
+            coverUrl: coverUrl
         });
+
+        if (coverUrl) {
+           setCoverPreview(coverUrl);
+        }
+
         setSearchResults([]);
     };
 

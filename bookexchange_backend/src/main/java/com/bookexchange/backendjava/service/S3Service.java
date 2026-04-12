@@ -61,6 +61,9 @@ public class S3Service {
 
         s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
 
-        return endpoint + "/" + bucketName + "/" + fileName;
+        // Make sure the returned URL is accessible by the browser (replace localstack internal name with localhost)
+        String publicEndpoint = endpoint.replace("http://localstack:4566", "http://localhost:4566");
+
+        return publicEndpoint + "/" + bucketName + "/" + fileName;
     }
 }

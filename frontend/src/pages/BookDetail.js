@@ -148,8 +148,9 @@ export default function BookDetail() {
             if (Number(book.ownerId) === Number(currentUserId)) return;
 
             try {
-                const all = await getAllBooks();
+                const response = await getAllBooks();
                 if (!isActive) return;
+                const all = response.books || [];
                 const mine = Array.isArray(all)
                     ? all.filter((b) => Number(b.ownerId) === Number(currentUserId) && normalizeStatus(b.status) === 'available')
                     : [];
@@ -378,41 +379,46 @@ export default function BookDetail() {
                 <div style={contentGridStyle}>
                     {/* Левая колонка */}
                     <div style={detailColumnStyle}>
-						<div style={largeBookCoverWrapStyle} aria-label={`Обложка книги ${book.title}`}>
-							<div style={largeBookCoverPlaceholderStyle} aria-hidden="true">
-                                нет обложки
-							</div>
-							{book.coverUrl ? (
-								<img
-									src={book.coverUrl}
-									alt={`Обложка книги ${book.title}`}
-									style={largeBookCoverImageStyle}
-									onError={(e) => {
-										e.currentTarget.style.display = 'none';
-									}}
-								/>
-							) : null}
-						</div>
-                        <h2>О книге</h2>
-                        <p style={descriptionStyle}>{book.description}</p>
-                        <div style={infoGridStyle}>
-                            <InfoItem label="Автор:" value={book.author} action={
-                                isLoggedIn ? (
-                                    <button
-                                        type="button"
-                                        onClick={toggleFavoriteAuthor}
-                                        style={{
-                                            ...favoriteAuthorStyle,
-                                            backgroundColor: isFavoriteAuthor ? primaryColor : 'white',
-                                            color: isFavoriteAuthor ? 'white' : primaryColor,
+                        <div style={{ display: 'flex', flexDirection: 'row', gap: '30px', alignItems: 'flex-start' }}>
+                            <div style={largeBookCoverWrapStyle} aria-label={`Обложка книги ${book.title}`}>
+                                <div style={largeBookCoverPlaceholderStyle} aria-hidden="true">
+                                    нет обложки
+                                </div>
+                                {book.coverUrl ? (
+                                    <img
+                                        src={book.coverUrl}
+                                        alt={`Обложка книги ${book.title}`}
+                                        style={largeBookCoverImageStyle}
+                                        onError={(e) => {
+                                            e.currentTarget.style.display = 'none';
                                         }}
-                                    >
-                                        {isFavoriteAuthor ? '✓ Любимый автор' : '+ Любимый автор'}
-                                    </button>
-                                ) : null
-                            } />
-                            <InfoItem label="Жанр:" value={book.genre || 'Не указан'} />
-                            <InfoItem label="Состояние:" value={book.condition || 'Не указано'} />
+                                    />
+                                ) : null}
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <h2>О книге</h2>
+                                <p style={descriptionStyle}>{book.description}</p>
+                                <div style={infoGridStyle}>
+                                    <InfoItem label="Автор:" value={book.author} action={
+                                        isLoggedIn ? (
+                                            <button
+                                                type="button"
+                                                onClick={toggleFavoriteAuthor}
+                                                style={{
+                                                    ...favoriteAuthorStyle,
+                                                    backgroundColor: isFavoriteAuthor ? primaryColor : 'white',
+                                                    color: isFavoriteAuthor ? 'white' : primaryColor,
+                                                }}
+                                            >
+                                                {isFavoriteAuthor ? '✓ Любимый автор' : '+ Любимый автор'}
+                                            </button>
+                                        ) : null
+                                    } />
+                                    <InfoItem label="Жанр:" value={book.genre || 'Не указан'} />
+                                    <InfoItem label="Состояние:" value={book.condition || 'Не указано'} />
+                                    <InfoItem label="Статус:" value={book.available ? 'Доступна для обмена' : 'В обмене'} />
+                                </div>
+                            </div>
                         </div>
                     </div>
                     {/* Правая колонка: Профиль владельца и Кнопка обмена */}
@@ -685,7 +691,8 @@ const sidebarStyle = {
 
 const largeBookCoverWrapStyle = {
     position: 'relative',
-    width: '100%',
+    width: '250px',
+    flexShrink: 0,
     aspectRatio: '2/3',
     borderRadius: 12,
     overflow: 'hidden',

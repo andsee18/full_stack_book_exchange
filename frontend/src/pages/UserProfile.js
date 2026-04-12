@@ -37,7 +37,7 @@ export default function UserProfile() {
             setError(null);
 
             try {
-                const [u, allBooks] = await Promise.all([
+                const [u, allBooksResponse] = await Promise.all([
                     getUserById(userId),
                     getAllBooks(),
                 ]);
@@ -45,6 +45,8 @@ export default function UserProfile() {
                 if (!isActive) return;
 
                 setProfileUser(u);
+
+                const allBooks = allBooksResponse.books || [];
                 const availableBooks = Array.isArray(allBooks)
                     ? allBooks.filter((b) => Number(b?.ownerId) === Number(userId) && normalizeStatus(b?.status) === 'available')
                     : [];

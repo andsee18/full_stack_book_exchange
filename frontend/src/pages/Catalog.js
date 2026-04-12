@@ -52,7 +52,7 @@ const BookCard = ({ book, isLoggedIn, currentUserId }) => {
 
             <h3 style={titleStyle}>{book.title}</h3>
             <p style={authorStyle}>{book.author}</p>
-            <p style={statusStyle}>статус: <strong>{book.status}</strong></p>
+            <p style={statusStyle}>статус: <strong>{book.status === 'available' ? 'доступна' : (book.status === 'exchanged' ? 'совершена' : 'в обмене')}</strong></p>
 
             <Link
                 to={`/books/${book.id}`}

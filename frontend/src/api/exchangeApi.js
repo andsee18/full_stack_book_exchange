@@ -64,17 +64,17 @@ export const getOutgoingExchangeRequests = async () => {
 };
 
 export const acceptExchangeRequest = async (id) => {
-    const response = await exchangeApi.put(`/${id}/accept`);
+    const response = await exchangeApi.post(`/${id}/accept`);
     return response.data;
 };
 
 export const rejectExchangeRequest = async (id) => {
-    const response = await exchangeApi.put(`/${id}/reject`);
+    const response = await exchangeApi.post(`/${id}/reject`);
     return response.data;
 };
 
 export const cancelExchangeRequest = async (id) => {
-    const response = await exchangeApi.put(`/${id}/cancel`);
+    const response = await exchangeApi.post(`/${id}/cancel`);
     return response.data;
 };
 

@@ -273,6 +273,23 @@ export default function EditBook() {
                         ))}
                     </select>
 
+                    {bookData.status === 'pending' ? (
+                        <div style={{ ...inputStyle, background: '#eee', color: '#666' }}>
+                            Статус: <strong>В обмене</strong> (заблокировано до завершения обмена)
+                        </div>
+                    ) : (
+                        <select
+                            name="status"
+                            value={bookData.status}
+                            onChange={handleChange}
+                            required
+                            style={inputStyle}
+                        >
+                            <option value="available">Доступна для обмена (видна в каталоге)</option>
+                            <option value="hidden">Скрыта (не участвует в обмене)</option>
+                        </select>
+                    )}
+
                     <button type="submit" style={buttonStyle}>
                         Сохранить
                     </button>

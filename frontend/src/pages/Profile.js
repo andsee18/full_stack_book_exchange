@@ -35,7 +35,11 @@ const formatBookStatusRu = (status) => {
 
     switch (s) {
         case 'available':
-            return 'Доступна для обмена';
+            return 'Доступна';
+        case 'pending':
+            return 'В обмене';
+        case 'hidden':
+            return 'Скрыта';
         case 'exchanged':
             return 'Доступна для обмена';
         case 'reserved':

@@ -52,7 +52,12 @@ const BookCard = ({ book, isLoggedIn, currentUserId }) => {
 
             <h3 style={titleStyle}>{book.title}</h3>
             <p style={authorStyle}>{book.author}</p>
-            <p style={statusStyle}>статус: <strong>{book.status === 'available' ? 'доступна' : (book.status === 'exchanged' ? 'совершена' : 'в обмене')}</strong></p>
+            <p style={statusStyle}>
+                статус: <strong>
+                {book.status === 'available' ? 'доступна' :
+                 (book.status === 'pending' ? 'в обмене' : 'скрыта')}
+                </strong>
+            </p>
 
             <Link
                 to={`/books/${book.id}`}
@@ -125,8 +130,9 @@ export default function Catalog({ isFavorites = false }) {
                 query: titleQuery || undefined,
                 genre: genreFilter || undefined,
                 condition: conditionFilter || undefined,
+                status: isFavorites ? undefined : 'available',
                 page: page,
-                size: pageSize
+                size: isFavorites ? 1000 : pageSize
             });
             // странице избранного фильтруем локально
             if (isFavorites && isLoggedIn) {

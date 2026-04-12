@@ -61,6 +61,9 @@ public class ExchangeRequestService {
         request.setRequesterId(requesterId);
         request.setRecipientId(recipientId); 
         request.setStatus("pending"); 
+
+        bookService.updateOwnerAndStatus(requestedBookId, recipientId, "pending");
+        bookService.updateOwnerAndStatus(offeredBookId, requesterId, "pending");
         
         return Optional.of(requestRepository.save(request));
     }
@@ -93,9 +96,9 @@ public class ExchangeRequestService {
         // обновление статуса заявки
         requestRepository.updateStatus(requestId, "accepted");
         
-        // смена владельцев
-        boolean requestedUpdated = bookService.updateOwnerAndStatus(request.getRequestedBookId(), request.getRequesterId(), "available");
-        boolean offeredUpdated = bookService.updateOwnerAndStatus(request.getOfferedBookId(), request.getRecipientId(), "available");
+        // смена владельцев и статус скрыт
+        boolean requestedUpdated = bookService.updateOwnerAndStatus(request.getRequestedBookId(), request.getRequesterId(), "hidden");
+        boolean offeredUpdated = bookService.updateOwnerAndStatus(request.getOfferedBookId(), request.getRecipientId(), "hidden");
 
         if (!requestedUpdated || !offeredUpdated) {
             throw new IllegalStateException("Failed to update book owners during exchange accept.");
@@ -123,6 +126,9 @@ public class ExchangeRequestService {
             return false; 
         }
         
+        bookService.updateOwnerAndStatus(request.getRequestedBookId(), request.getRecipientId(), "available");
+        bookService.updateOwnerAndStatus(request.getOfferedBookId(), request.getRequesterId(), "available");
+        
         return requestRepository.updateStatus(requestId, "rejected") > 0;
     }
 
@@ -144,6 +150,9 @@ public class ExchangeRequestService {
         if (!request.getRequesterId().equals(currentUserId)) {
             return false;
         }
+
+        bookService.updateOwnerAndStatus(request.getRequestedBookId(), request.getRecipientId(), "available");
+        bookService.updateOwnerAndStatus(request.getOfferedBookId(), request.getRequesterId(), "available");
 
         return requestRepository.updateStatus(requestId, "cancelled") > 0;
     }
